@@ -1,0 +1,41 @@
+name: fastapi-notifications-service
+
+services:
+  notifications-db:
+    image: postgres:16
+    container_name: ${POSTGRES_DB}
+    env_file:
+      - ./.env
+    volumes:
+      - notifications-database:/var/lib/postgresql/data
+    expose:
+      - ${POSTGRES_PORT}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+    restart: always
+    networks:
+      - shared-network
+
+  notifications-cache:
+    image: redis
+    container_name: ${REDIS_DB}
+    expose:
+      - ${REDIS_PORT}
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    volumes:
+      - notifications-rds-data:/data
+      - notifications.redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    networks:
+      - shared-network
+
+volumes:
+  notifications-database:
+  notifications-rds-data:
+  notifications.redis.conf:
+
+
+networks:
+  shared-network:
+    external: true
