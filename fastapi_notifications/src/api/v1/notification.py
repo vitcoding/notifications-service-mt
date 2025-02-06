@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, Response, Security, status
 
 from core.config import config
 from core.logger import log
+from tasks.task import task_add
 
 router = APIRouter()
 
@@ -14,7 +15,7 @@ router = APIRouter()
     description="Notification",
     response_description="Notification",
 )
-async def create_user(
+async def example(
     request: Request,
     response: Response,
 ) -> dict:
@@ -24,6 +25,14 @@ async def create_user(
     request_id = request.headers.get("X-Request-Id")
     log.info(f"X-Request-ID: {request_id}")
 
+    # # waits for result
+    # task_add("example message", 3)
+
+    task_result = task_add.apply_async(args=("example message", 3))
+
+    # # waits for result
+    # task_result.get()
+
     result = {"message": "Some result."}
-    log.info(f"response headers: \n{response.headers.items()}")
+    log.info(f"response headers: {response.headers.items()}")
     return result
