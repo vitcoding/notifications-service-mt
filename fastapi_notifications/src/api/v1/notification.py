@@ -6,6 +6,8 @@ from tasks.task import task_add
 
 router = APIRouter()
 
+COUNTER = 0
+
 
 @router.get(
     "/",
@@ -25,12 +27,9 @@ async def example(
     request_id = request.headers.get("X-Request-Id")
     log.info(f"X-Request-ID: {request_id}")
 
-    task_result = task_add.apply_async(args=["example message", 3])
-    # task_result = task_add.apply_async(args=("example message", 3))
-
-    # Если нужен результат выполнения задачи, можно получить его позже
-    # async_result = AsyncResult(task_result.task_id)
-    # result = async_result.get(timeout=10)  # Ожидание результата до 10 секунд
+    global COUNTER
+    task_result = task_add.apply_async(args=["example message", 3, COUNTER])
+    COUNTER += 1
 
     result = {"message": "Some result."}
     log.info(f"response headers: {response.headers.items()}")
