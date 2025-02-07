@@ -40,6 +40,7 @@ services:
   notifications-service:
     build: .
     container_name: notifications_service
+    command: /entrypoint-fastapi.sh
     expose:
       - 8000
     env_file:
@@ -48,6 +49,17 @@ services:
       - notifications-db
       - notifications-cache
       - notifications-nginx
+    networks:
+      - shared-network
+
+  notifications-celery:
+    build: .
+    container_name: notifications_celery
+    command: /entrypoint-celery.sh
+    env_file:
+      - .env
+    depends_on:
+      - notifications-service
     networks:
       - shared-network
 
