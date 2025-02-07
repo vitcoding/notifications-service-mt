@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 
+from celery import Celery
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
@@ -25,6 +26,15 @@ app = FastAPI(
     docs_url="/api/openapi",
     openapi_url="/api/openapi.json",
     default_response_class=ORJSONResponse,
+)
+
+
+# Celery app configuration
+celery_app = Celery(
+    "celery_tasks",
+    backend="rpc://",
+    broker=config.broker.connection,
+    # broker="pyamqp://user:password@localhost//",
 )
 
 # app.add_middleware(

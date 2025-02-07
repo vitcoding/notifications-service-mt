@@ -1,22 +1,13 @@
 from time import sleep
 
-from celery import Celery
+from celery import shared_task
 
 from core.logger import log
-
-celery = Celery(
-    "tasks",
-    backend="rpc://",
-    broker="pyamqp://user:password@localhost//",
-)
-
-# console:
-# celery -A tasks.task worker --loglevel=INFO
 
 COUNTER = 0
 
 
-@celery.task
+@shared_task()
 def task_add(message: str, delay: int) -> None:
     log.info(f"Sleeping for {delay} sec...")
 
@@ -25,10 +16,10 @@ def task_add(message: str, delay: int) -> None:
 
     sleep(delay)
 
+    celery_message = f"{message} - {count}\n"
     with open("main.log", mode="a", encoding="utf-8") as fw:
-        fw.write(message)
-    log.info(f"Message from celery: '{message} {count}'")
+        fw.write(f"{celery_message}")
+    log.info(f"Message from celery: '{celery_message}'")
 
     COUNTER += 1
-    print(message)
     return None

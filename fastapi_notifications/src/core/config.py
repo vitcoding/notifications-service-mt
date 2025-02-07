@@ -11,9 +11,7 @@ load_dotenv()
 
 
 class GlobalConfig(BaseSettings):
-    """
-    Base configuration settings for the entire application, including project name and root directory.
-    """
+    """Base configuration settings for the entire application."""
 
     # the project name for Swagger docs
     project_name: str = Field(default="Notifications")
@@ -23,6 +21,8 @@ class GlobalConfig(BaseSettings):
 
 
 class DBConfig(BaseSettings):
+    """Configuration settings for the database."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -38,6 +38,8 @@ class DBConfig(BaseSettings):
 
 
 class CacheConfig(BaseSettings):
+    """Configuration settings for the cache storage."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -49,6 +51,32 @@ class CacheConfig(BaseSettings):
     port: int = Field(default=6379)
 
 
+class BrokerConfig(BaseSettings):
+    """Configuration settings for the message broker."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="rabbitmq_",
+        extra="ignore",
+    )
+
+    user: str = Field(default="user")
+    password: str = Field(default="secret")
+    prefix: str = Field(default="pyamqp")
+    host: str = Field(default="127.0.0.1")
+    port: int = Field(default=5672)
+
+    @property
+    def connection(self):
+        connection_ = (
+            f"{self.prefix}://{self.user}:{self.password}"
+            f"@{self.host}:{self.port}"
+        )
+        return connection_
+
+
+# logging settings
 logging_config.dictConfig(LOGGING)
 
 
@@ -58,6 +86,7 @@ class Config(BaseSettings):
     globals: GlobalConfig = GlobalConfig()
     db: DBConfig = DBConfig()
     cache: CacheConfig = CacheConfig()
+    broker: BrokerConfig = BrokerConfig()
 
 
 config = Config()
