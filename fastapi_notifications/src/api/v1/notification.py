@@ -25,13 +25,12 @@ async def example(
     request_id = request.headers.get("X-Request-Id")
     log.info(f"X-Request-ID: {request_id}")
 
-    # # waits for result
-    # task_add("example message", 3)
+    task_result = task_add.apply_async(args=["example message", 3])
+    # task_result = task_add.apply_async(args=("example message", 3))
 
-    task_result = task_add.apply_async(args=("example message", 3))
-
-    # # waits for result
-    # task_result.get()
+    # Если нужен результат выполнения задачи, можно получить его позже
+    # async_result = AsyncResult(task_result.task_id)
+    # result = async_result.get(timeout=10)  # Ожидание результата до 10 секунд
 
     result = {"message": "Some result."}
     log.info(f"response headers: {response.headers.items()}")
