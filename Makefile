@@ -9,7 +9,7 @@
 NTF-DC = fastapi_notifications/docker-compose-notifications.yml
 NTF-NAME = ntf
 NTF-SERVICE-NAME = notifications-service
-NTF-WORKER-NAME = notifications-celery
+NTF-SCHEDULER-NAME = notifications-scheduler
 # rabbitmq
 RBT-DC = rabbitmq/docker-compose-rabbitmq.yml
 RBT-NAME = rabbitmq
@@ -38,17 +38,17 @@ destroy-$(NTF-NAME):
 	docker compose -f $(NTF-DC) down -v
 rebuild-$(NTF-NAME):
 	make rebuild-$(NTF-NAME)-service
-	make rebuild-$(NTF-NAME)-worker
+	make rebuild-$(NTF-NAME)-scheduler
 rebuild-$(NTF-NAME)-service:
 	docker compose -f $(NTF-DC) stop $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) rm -f $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) build $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) up -d $(NTF-SERVICE-NAME)
-rebuild-$(NTF-NAME)-worker:
-	docker compose -f $(NTF-DC) stop $(NTF-WORKER-NAME)
-	docker compose -f $(NTF-DC) rm -f $(NTF-WORKER-NAME)
-	docker compose -f $(NTF-DC) build $(NTF-WORKER-NAME)
-	docker compose -f $(NTF-DC) up -d $(NTF-WORKER-NAME)
+rebuild-$(NTF-NAME)-scheduler:
+	docker compose -f $(NTF-DC) stop $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) rm -f $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) build $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) up -d $(NTF-SCHEDULER-NAME)
 
 # debug-mode (db & cache: docker, fastapi: prj)
 up-$(NTF-NAME)-db:

@@ -30,8 +30,8 @@ app = FastAPI(
 
 
 # Celery app configuration
-celery_app = Celery(
-    "celery_tasks",
+scheduler_app = Celery(
+    "scheduler",
     backend="rpc://",
     broker=config.broker.connection,
     # broker="pyamqp://user:password@localhost//",

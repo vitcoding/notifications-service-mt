@@ -52,10 +52,10 @@ services:
     networks:
       - shared-network
 
-  notifications-celery:
+  notifications-scheduler:
     build: .
-    container_name: notifications_celery
-    command: /entrypoint-celery.sh
+    container_name: notifications_scheduler
+    command: /entrypoint-scheduler.sh
     env_file:
       - .env
     depends_on:

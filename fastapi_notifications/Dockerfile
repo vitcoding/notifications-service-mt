@@ -15,7 +15,7 @@ RUN apt-get update \
 COPY entrypoint-fastapi.sh /
 RUN chmod +x /entrypoint-fastapi.sh
 
-COPY entrypoint-celery.sh /
-RUN chmod +x /entrypoint-celery.sh
+COPY entrypoint-scheduler.sh /
+RUN chmod +x /entrypoint-scheduler.sh
 
 COPY ./src .
