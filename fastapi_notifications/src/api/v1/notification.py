@@ -6,7 +6,10 @@ from tasks.scheduler import task_add
 
 router = APIRouter()
 
-COUNTER = 0
+
+def generate_messages(quantity: int = 100) -> list[str]:
+    messages = [f"Message {i+1}" for i in range(quantity)]
+    return messages
 
 
 @router.get(
@@ -27,9 +30,8 @@ async def example(
     request_id = request.headers.get("X-Request-Id")
     log.info(f"X-Request-ID: {request_id}")
 
-    global COUNTER
-    task_result = task_add.apply_async(args=["example message", 3, COUNTER])
-    COUNTER += 1
+    for message in generate_messages(100):
+        task_result = task_add.apply_async(args=[message, 1])
 
     result = {"message": "Some result."}
     log.info(f"response headers: {response.headers.items()}")

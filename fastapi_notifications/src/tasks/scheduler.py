@@ -21,7 +21,7 @@ ROUTING_KEYS = [
 
 
 @shared_task(bind=True)
-def task_add(self, message: str, delay: int, counter: int) -> None:
+def task_add(self, message: str, delay: int) -> None:
     try:
         with Connection(config.broker.connection) as conn:
             exchange = Exchange(
@@ -37,7 +37,9 @@ def task_add(self, message: str, delay: int, counter: int) -> None:
                 sleep(delay)
 
                 routing_key = random.choice(ROUTING_KEYS)
-                message_body = f"Routing key: {routing_key:<30}: {counter}\nMessage: {message}"
+                message_body = (
+                    f"Routing key: {routing_key:<30}\nMessage: {message}"
+                )
                 producer.publish(
                     body=message_body,
                     exchange=exchange.name,
