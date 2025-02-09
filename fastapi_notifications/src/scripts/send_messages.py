@@ -16,7 +16,7 @@ async def send_messages(messages: list[str]) -> None:
 
 
 async def main() -> None:
-    messages = generate_messages(100)
+    messages = generate_messages(10)
     task = asyncio.create_task(send_messages(messages))
     await task
 
