@@ -15,7 +15,7 @@ async def send_messages(messages: list[str]) -> None:
             response = await client.post(url=url, json={"message": message})
 
 
-async def main():
+async def main() -> None:
     messages = generate_messages(100)
     task = asyncio.create_task(send_messages(messages))
     await task

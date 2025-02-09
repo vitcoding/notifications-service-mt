@@ -10,27 +10,17 @@ from aio_pika.exceptions import (
 from celery import shared_task
 
 from core.config import config
+from core.constants import EXCHANGE_NAME, QUEUE_NAME
 from core.logger import log
-
-# from pika import BlockingConnection, ConnectionParameters, PlainCredentials
-# from pika.adapters.blocking_connection import BlockingChannel
-# from pika.exceptions import AMQPConnectionError
-# from pika.exchange_type import ExchangeType
-# from pika.spec import Basic, BasicProperties
-
-EXCHANGE_NAME = "topic_notifications"
-
-
-# @shared_task
-# def process_message(message: str):
-#     log.info(f"[🎉] the message '{message}' sent.")
 
 
 async def process_message(message: str) -> None:
     log.info(f"[🎉] the message '{message}' sent.")
 
 
-async def queue_get_messages():
+async def queue_get_messages(
+    exchange_name: str = EXCHANGE_NAME, queue_name: str = QUEUE_NAME
+) -> None:
     try:
         log.info(f"Connecting to RabbitMQ...")
 
@@ -39,12 +29,10 @@ async def queue_get_messages():
             channel = await connection.channel()
             log.debug(f"Connected successfully to RabbitMQ.")
 
-            exchange_name = EXCHANGE_NAME
             exchange = await channel.declare_exchange(
                 name=exchange_name, type=ExchangeType.TOPIC
             )
 
-            queue_name = "notifications"
             log.info(f"\nqueue_name: {queue_name}")
             queue = await channel.declare_queue(name=queue_name, durable=True)
             await queue.bind(exchange, "#")
