@@ -11,6 +11,14 @@ debug_no_logger:
 
 scheduler:
 	celery -A main.scheduler_app worker --loglevel=INFO
+# launch case 1
+sender:
+	celery -A main.sender_app worker -B --loglevel=INFO
+# launch case 2
+sender-scheduler:
+	celery -A main.sender_app beat --loglevel=INFO
+sender-worker:
+	celery -A main.sender_app worker --loglevel=INFO
 
 # # mypy
 # mypy:

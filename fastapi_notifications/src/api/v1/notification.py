@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Request, Response, Security, status
 
 from core.config import config
 from core.logger import log
-from tasks.task import task_add
+from tasks.scheduler import task_add
 
 router = APIRouter()
 

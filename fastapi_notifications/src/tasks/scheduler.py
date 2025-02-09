@@ -6,6 +6,7 @@ from kombu import Connection, Exchange, Queue
 from kombu.pools import producers
 from kombu.utils.compat import nested
 from pika import BlockingConnection, ConnectionParameters, PlainCredentials
+from pika.exceptions import AMQPConnectionError
 from pika.exchange_type import ExchangeType
 
 from core.config import config
@@ -26,7 +27,10 @@ def task_add(self, message: str, delay: int, counter: int) -> None:
             exchange = Exchange(
                 name=EXCHANGE_NAME, type="topic", durable=False
             )
-            queue = Queue(name="", exchange=exchange, routing_key="#")
+            # queue = Queue(name="", exchange=exchange, routing_key="#")
+            queue = Queue(
+                name="notifications", exchange=exchange, routing_key="#"
+            )
 
             with producers[conn].acquire(block=True) as producer:
                 log.info(f"Sleeping for {delay} seconds...")
@@ -42,5 +46,9 @@ def task_add(self, message: str, delay: int, counter: int) -> None:
                     retry=True,
                 )
                 log.info(f"\n[✅] {message_body}")
+    except AMQPConnectionError as err:
+        log.info(f"An error connecting to RabbitMQ: {err}")
+        raise
     except Exception as err:
-        self.retry(exc=err, countdown=60)
+        log.info(f"An unexpected error: {err}")
+        raise
