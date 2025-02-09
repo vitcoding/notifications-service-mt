@@ -1,74 +1,87 @@
+import asyncio
 import sys
 
+from aio_pika import ExchangeType, IncomingMessage, Message, connect_robust
+from aio_pika.exceptions import (
+    AMQPChannelError,
+    AMQPConnectionError,
+    QueueEmpty,
+)
 from celery import shared_task
-from pika import BlockingConnection, ConnectionParameters, PlainCredentials
-from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import AMQPConnectionError
-from pika.exchange_type import ExchangeType
-from pika.spec import Basic, BasicProperties
 
 from core.config import config
 from core.logger import log
 
+# from pika import BlockingConnection, ConnectionParameters, PlainCredentials
+# from pika.adapters.blocking_connection import BlockingChannel
+# from pika.exceptions import AMQPConnectionError
+# from pika.exchange_type import ExchangeType
+# from pika.spec import Basic, BasicProperties
+
 EXCHANGE_NAME = "topic_notifications"
 
 
-@shared_task
-def process_message(message: str):
+# @shared_task
+# def process_message(message: str):
+#     log.info(f"[🎉] the message '{message}' sent.")
+
+
+async def process_message(message: str) -> None:
     log.info(f"[🎉] the message '{message}' sent.")
 
 
-@shared_task(bind=True)
-def sender_task(self, name: str) -> None:
+async def queue_get_messages():
     try:
-        log.info(f"\n{'-'*30}\n{name} launched.\n")
-        credentials = PlainCredentials(username="user", password="password")
-        with BlockingConnection(
-            ConnectionParameters(host="localhost", credentials=credentials)
-        ) as connection:
-            with connection.channel() as channel:
-                log.debug(f"Connected successfully to RabbitMQ.")
+        log.info(f"Connecting to RabbitMQ...")
 
-                exchange_name = EXCHANGE_NAME
-                channel.exchange_declare(
-                    exchange=exchange_name, exchange_type=ExchangeType.topic
-                )
-                # queue = channel.queue_declare(queue="", exclusive=True)
-                # queue_name = queue.method.queue
-                ###
-                queue_name = "notifications"
-                log.info(f"\nqueue_name: {queue_name}")
+        connection = await connect_robust(config.broker.connection)
+        async with connection:
+            channel = await connection.channel()
+            log.debug(f"Connected successfully to RabbitMQ.")
 
-                binding_keys = ["#"]
-                for binding_key in binding_keys:
-                    channel.queue_bind(
-                        exchange=exchange_name,
-                        queue=queue_name,
-                        routing_key=binding_key,
-                    )
+            exchange_name = EXCHANGE_NAME
+            exchange = await channel.declare_exchange(
+                name=exchange_name, type=ExchangeType.TOPIC
+            )
 
-                method_frame, header_frame, body = channel.basic_get(
-                    queue_name
-                )
-                log.info(
-                    f"\n(method_frame, header_frame, body): \n{(method_frame, header_frame, body)}\n\n"
-                )
-                if method_frame is not None:
-                    message_body = body.decode("utf-8")
-                    log.info(f"Got a message: '{message_body}'")
+            queue_name = "notifications"
+            log.info(f"\nqueue_name: {queue_name}")
+            queue = await channel.declare_queue(name=queue_name, durable=True)
+            await queue.bind(exchange, "#")
+
+            batch_size = 2
+            counter = 0
+            while counter < batch_size:
+                try:
+                    message = await queue.get(timeout=1)
+                    message_body = message.body.decode("utf-8")
+                    log.info(f"Got a message: {message_body}")
 
                     # Celery task 'process_message'
-                    process_message.delay(message_body)
+                    await process_message(message_body)
 
                     # Confirmation of receipt of the message
-                    channel.basic_ack(method_frame.delivery_tag)
-                else:
+                    await message.ack()
+                    counter += 1
+                except QueueEmpty:
                     log.info("\nNo messages available.\n")
+                    break
 
         log.info(f"Connection closed.\n\n{'-'*30}\n")
-    except AMQPConnectionError as err:
+    except (AMQPConnectionError, AMQPChannelError) as err:
         log.info(f"An error connecting to RabbitMQ: {err}")
         raise
     except Exception as err:
         log.info(f"An unexpected error: {err}")
         raise
+
+
+async def sender_main():
+    task = asyncio.create_task(queue_get_messages())
+    await task
+
+
+@shared_task(bind=True)
+def sender_task(self, name: str) -> None:
+    log.info(f"\n{'-'*30}\n{name} launched.\n")
+    asyncio.run(sender_main())
