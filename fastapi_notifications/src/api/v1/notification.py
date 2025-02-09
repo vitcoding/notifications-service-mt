@@ -4,7 +4,7 @@ from core.config import config
 from core.logger import log
 from schemas.notifications import Notification
 from schemas.responses import SimpleResultResponse
-from services.notification import (
+from services.notifications import (
     NotificationsService,
     get_notifications_service,
 )
