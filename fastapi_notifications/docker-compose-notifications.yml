@@ -63,6 +63,17 @@ services:
     networks:
       - shared-network
 
+  notifications-sender:
+    build: .
+    container_name: notifications_sender
+    command: /entrypoint-sender.sh
+    env_file:
+      - .env
+    depends_on:
+      - notifications-service
+    networks:
+      - shared-network
+
 volumes:
   notifications-database:
   notifications-rds-data:

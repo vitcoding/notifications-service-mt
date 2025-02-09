@@ -18,4 +18,7 @@ RUN chmod +x /entrypoint-fastapi.sh
 COPY entrypoint-scheduler.sh /
 RUN chmod +x /entrypoint-scheduler.sh
 
+COPY entrypoint-sender.sh /
+RUN chmod +x /entrypoint-sender.sh
+
 COPY ./src .

@@ -6,3 +6,5 @@ __pycache__/
 *temp/
 *_example*
 *.log
+
+celerybeat-schedule
