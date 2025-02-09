@@ -49,7 +49,7 @@ async def queue_get_messages():
             queue = await channel.declare_queue(name=queue_name, durable=True)
             await queue.bind(exchange, "#")
 
-            batch_size = 2
+            batch_size = 1_000
             counter = 0
             while counter < batch_size:
                 try:
