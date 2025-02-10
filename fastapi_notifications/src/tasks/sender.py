@@ -1,7 +1,6 @@
 import asyncio
-import sys
 
-from aio_pika import ExchangeType, IncomingMessage, Message, connect_robust
+from aio_pika import ExchangeType, connect_robust
 from aio_pika.exceptions import (
     AMQPChannelError,
     AMQPConnectionError,

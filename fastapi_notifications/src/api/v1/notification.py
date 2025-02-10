@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Response, Security, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from core.config import config
 from core.logger import log
@@ -29,6 +29,7 @@ async def send_notification(
     ),
 ) -> SimpleResultResponse:
 
+    # for debug
     # log.info(f"config: {config.model_dump()}")
 
     message = notification.message

@@ -15,11 +15,5 @@ celery-beat:
 celery-worker:
 	celery -A main.celery_app worker --loglevel=INFO
 
-
-# # mypy
-# mypy:
-# 	mypy .
-
-# mypy-service:
-# 	mypy . --exclude tests/functional
-
+clean:
+	rm -f _temp/logs/logs.log

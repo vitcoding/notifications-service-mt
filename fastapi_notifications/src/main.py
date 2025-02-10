@@ -35,18 +35,17 @@ celery_app = Celery(
     "celery_app",
     backend="rpc://",
     broker=config.broker.connection,
-    # broker="pyamqp://user:password@localhost//",
 )
 
 celery_app.conf.beat_schedule = {
     "former-background-task": {
-        "task": "tasks.former.former_task",  # call_background_task",
-        "schedule": 2.0,  # launch every <...> seconds
+        "task": "tasks.former.former_task",
+        "schedule": 2.0,
         "args": ("scheduler-app",),
     },
     "sender-background-task": {
-        "task": "tasks.sender.sender_task",  # call_background_task",
-        "schedule": 5.0,  # launch every <...> seconds
+        "task": "tasks.sender.sender_task",
+        "schedule": 5.0,
         "args": ("sender-app",),
     },
 }

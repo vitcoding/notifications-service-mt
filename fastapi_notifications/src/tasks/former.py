@@ -1,22 +1,10 @@
 import asyncio
-import random
-from time import sleep
 
 from celery import shared_task
-from kombu import Connection, Exchange, Queue
-from kombu.pools import producers
-from kombu.utils.compat import nested
-from pika import BlockingConnection, ConnectionParameters, PlainCredentials
-from pika.exceptions import AMQPChannelError, AMQPConnectionError
-from pika.exchange_type import ExchangeType
 
-from core.config import config
 from core.constants import EXCHANGE_NAME, QUEUE_NAME
 from core.logger import log
-from services.notifications import (
-    NotificationsService,
-    get_notifications_service,
-)
+from services.notifications import NotificationsService
 
 EXCHANGE_NAME = "topic_notifications"
 ROUTING_KEYS = [
@@ -33,7 +21,6 @@ async def send_notification_task(
     queue_name: str = QUEUE_NAME,
 ):
     notifications_service = NotificationsService()
-    # await notifications_service.initialize_connection_pool()
     await notifications_service.add_notification_task(
         message, exchange_name, queue_name
     )

@@ -1,7 +1,5 @@
-import asyncio
 from functools import lru_cache
 
-import anyio
 from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
 from aio_pika.exceptions import AMQPChannelError, AMQPConnectionError
 from aio_pika.pool import Pool
@@ -19,8 +17,7 @@ class NotificationsService:
         if not self._connection_pool:
             self._connection_pool = Pool(
                 lambda: connect_robust(config.broker.connection),
-                max_size=5,
-                # max_size=config.broker.max_connections,
+                max_size=10,
             )
             log.info("Connection pool initialized.")
 
