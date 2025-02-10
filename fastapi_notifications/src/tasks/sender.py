@@ -71,7 +71,7 @@ async def sender_main():
     await task
 
 
-@shared_task(bind=True, name="tasks.sender.sender_task")
+@shared_task(bind=True)
 def sender_task(self, name: str) -> None:
     log.info(f"\n{'-'*30}\n{name} launched.\n")
     asyncio.run(sender_main())

@@ -39,7 +39,7 @@ async def send_notification_task(
     )
 
 
-async def scheduler_main() -> None:
+async def former_main() -> None:
 
     global COUNTER
     task = asyncio.create_task(
@@ -49,11 +49,11 @@ async def scheduler_main() -> None:
     await task
 
 
-@shared_task(bind=True, name="tasks.scheduler.scheduler_task")
-def scheduler_task(
+@shared_task(bind=True)
+def former_task(
     self,
     name: str,
 ) -> None:
     log.info(f"\n{'-'*30}\n{name} launched.\n")
 
-    asyncio.run(scheduler_main())
+    asyncio.run(former_main())
