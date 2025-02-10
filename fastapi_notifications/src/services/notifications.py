@@ -13,19 +13,21 @@ from core.logger import log
 
 class NotificationsService:
     def __init__(self) -> None:
-        self._connection_pool: Pool = None
+        self._connection_pool: Pool | None = None
 
     async def initialize_connection_pool(self) -> None:
         if not self._connection_pool:
             self._connection_pool = Pool(
                 lambda: connect_robust(config.broker.connection),
-                max_size=10,
+                max_size=5,
                 # max_size=config.broker.max_connections,
             )
+            log.info("Connection pool initialized.")
 
     async def close_connection_pool(self) -> None:
         if self._connection_pool:
             await self._connection_pool.close()
+            log.info("Connection pool closed.")
 
     async def add_notification_task(
         self,
@@ -34,6 +36,8 @@ class NotificationsService:
         queue_name: str = QUEUE_NAME,
     ) -> None:
         try:
+            log.info(f"self._connection_pool: {self._connection_pool}")
+            await self.initialize_connection_pool()
             async with self._connection_pool.acquire() as connection:
                 async with connection.channel() as channel:
 
@@ -68,5 +72,4 @@ def get_notifications_service() -> NotificationsService:
     """NotificationsService provider."""
 
     service = NotificationsService()
-    anyio.run(service.initialize_connection_pool)
     return service

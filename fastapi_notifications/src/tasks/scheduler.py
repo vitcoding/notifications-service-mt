@@ -1,3 +1,4 @@
+import asyncio
 import random
 from time import sleep
 
@@ -12,6 +13,10 @@ from pika.exchange_type import ExchangeType
 from core.config import config
 from core.constants import EXCHANGE_NAME, QUEUE_NAME
 from core.logger import log
+from services.notifications import (
+    NotificationsService,
+    get_notifications_service,
+)
 
 EXCHANGE_NAME = "topic_notifications"
 ROUTING_KEYS = [
@@ -19,43 +24,36 @@ ROUTING_KEYS = [
     "notification.instant.email",
     "notification.delayed.email",
 ]
+COUNTER = 1
 
 
-@shared_task(bind=True)
-def task_add(
-    self,
+async def send_notification_task(
     message: str,
-    delay: int,
     exchange_name: str = EXCHANGE_NAME,
     queue_name: str = QUEUE_NAME,
+):
+    notifications_service = NotificationsService()
+    # await notifications_service.initialize_connection_pool()
+    await notifications_service.add_notification_task(
+        message, exchange_name, queue_name
+    )
+
+
+async def scheduler_main() -> None:
+
+    global COUNTER
+    task = asyncio.create_task(
+        send_notification_task(f"message_example {COUNTER}")
+    )
+    COUNTER += 1
+    await task
+
+
+@shared_task(bind=True, name="tasks.scheduler.scheduler_task")
+def scheduler_task(
+    self,
+    name: str,
 ) -> None:
-    try:
-        with Connection(config.broker.connection) as conn:
-            exchange = Exchange(
-                name=exchange_name, type="topic", durable=False
-            )
-            # queue = Queue(name="", exchange=exchange, routing_key="#")
-            queue = Queue(name=queue_name, exchange=exchange, routing_key="#")
+    log.info(f"\n{'-'*30}\n{name} launched.\n")
 
-            with producers[conn].acquire(block=True) as producer:
-                log.info(f"Sleeping for {delay} seconds...")
-                sleep(delay)
-
-                routing_key = random.choice(ROUTING_KEYS)
-                message_body = (
-                    f"Routing key: {routing_key:<30}\nMessage: {message}"
-                )
-                producer.publish(
-                    body=message_body,
-                    exchange=exchange.name,
-                    routing_key=routing_key,
-                    declare=[queue],
-                    retry=True,
-                )
-                log.info(f"\n[✅] {message_body}")
-    except (AMQPConnectionError, AMQPChannelError) as err:
-        log.info(f"An error connecting to RabbitMQ: {err}")
-        raise
-    except Exception as err:
-        log.info(f"An unexpected error: {err}")
-        raise
+    asyncio.run(scheduler_main())

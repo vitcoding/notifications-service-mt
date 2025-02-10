@@ -16,6 +16,8 @@ from core.logger import log
 
 async def process_message(message: str) -> None:
     log.info(f"[🎉] the message '{message}' sent.")
+    with open("./_temp/logs/logs.log", mode="a", encoding="utf-8") as fwa:
+        fwa.writelines(f"{message}\n")
 
 
 async def queue_get_messages(
@@ -69,7 +71,7 @@ async def sender_main():
     await task
 
 
-@shared_task(bind=True)
+@shared_task(bind=True, name="tasks.sender.sender_task")
 def sender_task(self, name: str) -> None:
     log.info(f"\n{'-'*30}\n{name} launched.\n")
     asyncio.run(sender_main())

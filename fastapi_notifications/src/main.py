@@ -7,6 +7,7 @@ from fastapi.responses import ORJSONResponse
 from api import router
 from core.config import config
 from middleware.rate_limiter import RateLimiterMiddleware
+from tasks.scheduler import scheduler_task
 from tasks.sender import sender_task
 
 # from redis.asyncio import Redis
@@ -29,28 +30,34 @@ app = FastAPI(
     default_response_class=ORJSONResponse,
 )
 
-
 # Celery scheduler app configuration
 scheduler_app = Celery(
-    "scheduler",
+    "scheduler_app",
     backend="rpc://",
     broker=config.broker.connection,
     # broker="pyamqp://user:password@localhost//",
 )
 
-# Celery scheduler app configuration
+scheduler_app.conf.beat_schedule = {
+    "scheduler-app-background-task": {
+        "task": "tasks.scheduler.scheduler_task",  # call_background_task",
+        "schedule": 2.0,  # launch every <...> seconds
+        "args": ("scheduler-app",),
+    }
+}
+
+# Celery sender app configuration
 sender_app = Celery(
-    "sender",
+    "sender_app",
     backend="rpc://",
     broker=config.broker.connection,
 )
 
 sender_app.conf.beat_schedule = {
-    "background-task": {
+    "sender-app-background-task": {
         "task": "tasks.sender.sender_task",  # call_background_task",
         "schedule": 5.0,  # launch every <...> seconds
-        # "schedule": crontab(hour=7, minute=0), # Crontab Schedules из Celery Вeat
-        "args": ("sender",),
+        "args": ("sender-app",),
     }
 }
 

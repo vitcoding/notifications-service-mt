@@ -8,7 +8,6 @@ from services.notifications import (
     NotificationsService,
     get_notifications_service,
 )
-from tasks.scheduler import task_add
 
 router = APIRouter()
 
@@ -35,6 +34,5 @@ async def send_notification(
     message = notification.message
 
     await notifications_service.add_notification_task(message)
-    # task_result = task_add.apply_async(args=[message, 1])
 
     return SimpleResultResponse(message="The task added.")
