@@ -32,7 +32,7 @@ class DBConfig(BaseSettings):
 
     user: str = Field(default="postgres")
     password: str = Field(default="secret")
-    db: str = Field(default="auth_db")
+    db: str = Field(default="notifications_db")
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=5432)
 

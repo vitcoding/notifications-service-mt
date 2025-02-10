@@ -5,4 +5,7 @@
 где `migration1` - имя миграции;
 
 - **применить все миграции**: 
-`alembic upgrade head`.
+`alembic upgrade head`;
+
+- **отменить последнюю миграцию**: 
+`alembic downgrade -1`.

@@ -22,7 +22,7 @@ class Notification(Base):
     user_email = Column(String(255), nullable=False)
     template_id = Column(UUID, nullable=False)
     message = Column(Text, nullable=False)
-    last_send_at = Column(DateTime, nullable=True)
+    last_sent_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -35,14 +35,14 @@ class Notification(Base):
         user_email: str,
         template_id: UUID,
         message: str,
-        last_send_at: datetime | None = None,
+        last_sent_at: datetime | None = None,
     ) -> None:
         self.user_id = user_id
         self.user_name = user_name
         self.user_email = user_email
         self.template_id = template_id
         self.message = message
-        self.last_send_at = last_send_at
+        self.last_sent_at = last_sent_at
 
     def __repr__(self) -> str:
         return f"<Notification {self.id}>"
