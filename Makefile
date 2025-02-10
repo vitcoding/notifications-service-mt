@@ -2,12 +2,15 @@
 # http://localhost:8006/api/openapi
 # rabbitmq
 # http://localhost:15672/
+# Auth data: {User: user, Password: password}
 
 
 # ntf (notifications) service
 NTF-DC = fastapi_notifications/docker-compose-notifications.yml
 NTF-NAME = ntf
 NTF-SERVICE-NAME = notifications-service
+NTF-SCHEDULER-NAME = notifications-scheduler
+NTF-SENDER-NAME = notifications-sender
 # rabbitmq
 RBT-DC = rabbitmq/docker-compose-rabbitmq.yml
 RBT-NAME = rabbitmq
@@ -28,17 +31,43 @@ destroy:
 	make destroy-$(NTF-NAME)
 	make destroy-$(RBT-NAME)
 	make net-rm
+stop:
+	make stop-$(NTF-NAME)
+	make stop-$(RBT-NAME)
+start:
+	make start-$(NTF-NAME)
+	make start-$(RBT-NAME)
+
 
 # NTF-NAME = ntf # notifications
 up-$(NTF-NAME):
 	docker compose -f $(NTF-DC) up -d --build --force-recreate
 destroy-$(NTF-NAME):
 	docker compose -f $(NTF-DC) down -v
+stop-$(NTF-NAME):
+	docker compose -f $(NTF-DC) stop
+start-$(NTF-NAME):
+	docker compose -f $(NTF-DC) start
 rebuild-$(NTF-NAME):
+	make rebuild-$(NTF-NAME)-service
+	make rebuild-$(NTF-NAME)-scheduler
+	make rebuild-$(NTF-NAME)-sender
+rebuild-$(NTF-NAME)-service:
 	docker compose -f $(NTF-DC) stop $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) rm -f $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) build $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) up -d $(NTF-SERVICE-NAME)
+rebuild-$(NTF-NAME)-scheduler:
+	docker compose -f $(NTF-DC) stop $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) rm -f $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) build $(NTF-SCHEDULER-NAME)
+	docker compose -f $(NTF-DC) up -d $(NTF-SCHEDULER-NAME)
+rebuild-$(NTF-NAME)-sender:
+	docker compose -f $(NTF-DC) stop $(NTF-SENDER-NAME)
+	docker compose -f $(NTF-DC) rm -f $(NTF-SENDER-NAME)
+	docker compose -f $(NTF-DC) build $(NTF-SENDER-NAME)
+	docker compose -f $(NTF-DC) up -d $(NTF-SENDER-NAME)
+
 # debug-mode (db & cache: docker, fastapi: prj)
 up-$(NTF-NAME)-db:
 	docker compose -f fastapi_notifications/docker-compose.debug.yml up -d --build --force-recreate
@@ -52,8 +81,17 @@ up-$(RBT-NAME):
 	docker compose -f $(RBT-DC) up -d --build --force-recreate
 destroy-$(RBT-NAME):
 	docker compose -f $(RBT-DC) down -v
+stop-$(RBT-NAME):
+	docker compose -f $(RBT-DC) stop
+start-$(RBT-NAME):
+	docker compose -f $(RBT-DC) start
 
 
 # open project (vs code)
 ntf-prj:
 	code fastapi_notifications/src
+
+
+# other
+dc-prune:
+	docker system prune -a -f

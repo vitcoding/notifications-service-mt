@@ -1,29 +1,39 @@
-from fastapi import APIRouter, Depends, Request, Response, Security, status
+from fastapi import APIRouter, Depends, Request, Response, status
 
 from core.config import config
 from core.logger import log
+from schemas.notifications import Notification
+from schemas.responses import SimpleResultResponse
+from services.notifications import (
+    NotificationsService,
+    get_notifications_service,
+)
 
 router = APIRouter()
 
 
-@router.get(
+@router.post(
     "/",
-    # response_model=SomeView,
+    response_model=SimpleResultResponse,
     status_code=status.HTTP_200_OK,
-    summary="Notification",
-    description="Notification",
-    response_description="Notification",
+    summary="Send a notification",
+    description="Send a notification",
+    response_description="The notification message sent",
 )
-async def create_user(
+async def send_notification(
     request: Request,
     response: Response,
-) -> dict:
+    notification: Notification,
+    notifications_service: NotificationsService = Depends(
+        get_notifications_service
+    ),
+) -> SimpleResultResponse:
 
-    log.info(f"config: {config.model_dump()}")
+    # for debug
+    # log.info(f"config: {config.model_dump()}")
 
-    request_id = request.headers.get("X-Request-Id")
-    log.info(f"X-Request-ID: {request_id}")
+    message = notification.message
 
-    result = {"message": "Some result."}
-    log.info(f"response headers: \n{response.headers.items()}")
-    return result
+    await notifications_service.add_notification_task(message)
+
+    return SimpleResultResponse(message="The task added.")

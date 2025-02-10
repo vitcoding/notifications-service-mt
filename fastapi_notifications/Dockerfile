@@ -12,9 +12,7 @@ RUN apt-get update \
     && pip install --upgrade --no-cache-dir pip \
     && pip install --no-cache-dir -r requirements.txt
 
-COPY entrypoint.sh /
-RUN chmod +x /entrypoint.sh
+COPY entrypoint-fastapi.sh /
+RUN chmod +x /entrypoint-fastapi.sh
 
 COPY ./src .
-
-ENTRYPOINT ["/entrypoint.sh"]

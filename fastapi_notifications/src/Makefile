@@ -9,9 +9,11 @@ debug:
 debug_no_logger:
 	uvicorn main:app --host 0.0.0.0 --port 8006 --reload 
 
-# # mypy
-# mypy:
-# 	mypy .
 
-# mypy-service:
-# 	mypy . --exclude tests/functional
+celery-beat:
+	celery -A main.celery_app beat --loglevel=INFO
+celery-worker:
+	celery -A main.celery_app worker --loglevel=INFO
+
+clean:
+	rm -f _temp/logs/logs.log
