@@ -1,4 +1,5 @@
-name: fastapi-notifications-service
+# fastapi notifications service
+name: notifications
 
 services:
   notifications-db:
@@ -28,7 +29,7 @@ services:
 
   notifications-nginx:
     image: nginx:alpine3.18
-    container_name: notifications-nginx
+    container_name: nginx
     ports:
       - ${SERVICE_PORT}:${NGINX_PORT}
     volumes:
@@ -52,10 +53,10 @@ services:
     networks:
       - shared-network
 
-  notifications-scheduler:
+  worker-celery:
     build: .
-    container_name: notifications_scheduler
-    command: /entrypoint-scheduler.sh
+    container_name: celery_worker
+    command: [ "celery", "-A", "main.celery_app", "worker", "--loglevel=INFO" ]
     env_file:
       - .env
     depends_on:
@@ -63,14 +64,14 @@ services:
     networks:
       - shared-network
 
-  notifications-sender:
+  beat-celery:
     build: .
-    container_name: notifications_sender
-    command: /entrypoint-sender.sh
+    container_name: celery_beat
+    command: [ "celery", "-A", "main.celery_app", "beat", "--loglevel=INFO" ]
     env_file:
       - .env
     depends_on:
-      - notifications-service
+      - worker-celery
     networks:
       - shared-network
 
