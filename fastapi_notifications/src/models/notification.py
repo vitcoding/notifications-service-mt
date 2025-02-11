@@ -21,7 +21,9 @@ class Notification(Base):
     user_name = Column(String(255), nullable=False)
     user_email = Column(String(255), nullable=False)
     template_id = Column(UUID, nullable=False)
+    subject = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
+    notification_type = Column(String(255), nullable=False, default="email")
     last_sent_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(
@@ -34,14 +36,18 @@ class Notification(Base):
         user_name: str,
         user_email: str,
         template_id: UUID,
+        subject: str,
         message: str,
+        notification_type: str,
         last_sent_at: datetime | None = None,
     ) -> None:
         self.user_id = user_id
         self.user_name = user_name
         self.user_email = user_email
         self.template_id = template_id
+        self.subject = subject
         self.message = message
+        self.notification_type = notification_type
         self.last_sent_at = last_sent_at
 
     def __repr__(self) -> str:

@@ -1,8 +1,8 @@
 """notifications_initial
 
-Revision ID: 541e5240fb46
+Revision ID: 4c1f676a01aa
 Revises: 
-Create Date: 2025-02-10 22:22:02.107035
+Create Date: 2025-02-11 21:58:20.355464
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '541e5240fb46'
+revision: str = '4c1f676a01aa'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,7 +26,9 @@ def upgrade() -> None:
     sa.Column('user_name', sa.String(length=255), nullable=False),
     sa.Column('user_email', sa.String(length=255), nullable=False),
     sa.Column('template_id', sa.UUID(), nullable=False),
+    sa.Column('subject', sa.String(length=255), nullable=False),
     sa.Column('message', sa.Text(), nullable=False),
+    sa.Column('notification_type', sa.String(length=255), nullable=False),
     sa.Column('last_sent_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
