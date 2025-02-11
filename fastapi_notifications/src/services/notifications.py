@@ -14,6 +14,23 @@ from schemas.notifications import NotificationTask
 from services.database import DBService
 
 
+async def broker_publisher(
+    connection, exchange_name, queue_name, notification_task
+):
+    async with connection.channel() as channel:
+        exchange = await channel.declare_exchange(
+            name=exchange_name, type=ExchangeType.TOPIC
+        )
+        queue = await channel.declare_queue(queue_name, durable=True)
+        await queue.bind(exchange=exchange, routing_key="#")
+        message_body = notification_task.model_dump_json().encode("utf-8")
+        message = Message(
+            message_body,
+            delivery_mode=DeliveryMode.PERSISTENT,
+        )
+        await exchange.publish(message, routing_key="#")
+
+
 class NotificationsService:
     def __init__(
         self,
@@ -53,32 +70,15 @@ class NotificationsService:
 
             await self.initialize_connection_pool()
             async with self._connection_pool.acquire() as connection:
-                async with connection.channel() as channel:
-                    exchange = await channel.declare_exchange(
-                        name=exchange_name, type=ExchangeType.TOPIC
-                    )
-                    queue = await channel.declare_queue(
-                        queue_name, durable=True
-                    )
-                    await queue.bind(exchange=exchange, routing_key="#")
-                    message_body = notification_task.model_dump_json().encode(
-                        "utf-8"
-                    )
-                    message = Message(
-                        message_body,
-                        delivery_mode=DeliveryMode.PERSISTENT,
-                    )
-                    await exchange.publish(message, routing_key="#")
+                await broker_publisher(
+                    connection, exchange_name, queue_name, notification_task
+                )
 
-                    # db write
-                    notification_db = Notification(
-                        **notification_task.model_dump()
-                    )
-                    await self.db_service.put_item(
-                        Notification, notification_db
-                    )
+            # db write
+            notification_db = Notification(**notification_task.model_dump())
+            await self.db_service.put_item(Notification, notification_db)
 
-                    log.info(f"\n[✅] {message_body}")
+            log.info(f"\n[✅] {notification_task}")
         except (AMQPConnectionError, AMQPChannelError) as err:
             log.info(f"An error connecting to RabbitMQ: {err}")
             raise
