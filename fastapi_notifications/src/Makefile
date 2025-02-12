@@ -9,6 +9,12 @@ debug:
 debug_no_logger:
 	uvicorn main:app --host 0.0.0.0 --port 8006 --reload 
 
+# migrations:
+# 	alembic revision --autogenerate -m <name>
+
+migrate:
+	alembic upgrade head
+
 
 celery-beat:
 	celery -A main.celery_app beat --loglevel=INFO
@@ -17,3 +23,7 @@ celery-worker:
 
 clean:
 	rm -f _temp/logs/logs.log
+
+# script:
+# 	chmod +x script.sh
+# 	./script.sh

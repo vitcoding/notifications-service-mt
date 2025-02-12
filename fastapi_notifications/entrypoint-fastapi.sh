@@ -7,6 +7,6 @@ while ! nc -z $POSTGRES_HOST $POSTGRES_PORT; do
 done
 
 
-# alembic upgrade head
+alembic upgrade head
 
 gunicorn -c gunicorn.conf.py main:app

@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 
 from aio_pika import ExchangeType, connect_robust
 from aio_pika.exceptions import (
@@ -16,7 +17,7 @@ from core.logger import log
 async def process_message(message: str) -> None:
     log.info(f"[🎉] the message '{message}' sent.")
     with open("./_temp/logs/logs.log", mode="a", encoding="utf-8") as fwa:
-        fwa.writelines(f"{message}\n")
+        fwa.writelines(f"{datetime.now().isoformat()}: {message}\n")
 
 
 async def queue_get_messages(

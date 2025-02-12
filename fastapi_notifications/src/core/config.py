@@ -18,9 +18,10 @@ class GlobalConfig(BaseSettings):
     base_dir: str = Field(
         default=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
+    log_sql_queries: bool = True
 
 
-class DBConfig(BaseSettings):
+class DataBaseConfig(BaseSettings):
     """Configuration settings for the database."""
 
     model_config = SettingsConfigDict(
@@ -32,9 +33,13 @@ class DBConfig(BaseSettings):
 
     user: str = Field(default="postgres")
     password: str = Field(default="secret")
-    db: str = Field(default="auth_db")
+    db: str = Field(default="notifications_db")
     host: str = Field(default="127.0.0.1")
     port: int = Field(default=5432)
+
+    @property
+    def url(self):
+        return f"postgresql+psycopg://{self.user}:{self.password}@{self.host}:{self.port}/{self.db}"
 
 
 class CacheConfig(BaseSettings):
@@ -84,7 +89,7 @@ class Config(BaseSettings):
     """Base configuration settings class."""
 
     globals: GlobalConfig = GlobalConfig()
-    db: DBConfig = DBConfig()
+    db: DataBaseConfig = DataBaseConfig()
     cache: CacheConfig = CacheConfig()
     broker: BrokerConfig = BrokerConfig()
 

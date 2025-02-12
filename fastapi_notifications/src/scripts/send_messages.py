@@ -1,23 +1,40 @@
 import asyncio
+from typing import Any
 
 import httpx
 
 
-def generate_messages(quantity: int = 100) -> list[str]:
-    messages = [f"Message {i+1}" for i in range(quantity)]
-    return messages
+def get_message_data(message: str) -> dict[str, Any]:
+    message_data = {
+        "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "user_name": "UserName",
+        "user_email": "email",
+        "template_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "subject": "Title",
+        "message": message,
+        "notification_type": "email",
+    }
+
+    return message_data
 
 
-async def send_messages(messages: list[str]) -> None:
+def generate_notifications(quantity: int = 100) -> list[dict[str, Any]]:
+    notifications = [
+        get_message_data(f"Message {i+1}") for i in range(quantity)
+    ]
+    return notifications
+
+
+async def send_notification_task(notifications: list[dict[str, Any]]) -> None:
     async with httpx.AsyncClient() as client:
-        url = "http://localhost:8006/api/v1/notification/"
-        for message in messages:
-            response = await client.post(url=url, json={"message": message})
+        url = "http://localhost:8006/api/v1/notifications/"
+        for notification in notifications:
+            response = await client.post(url=url, json=notification)
 
 
 async def main() -> None:
-    messages = generate_messages(10)
-    task = asyncio.create_task(send_messages(messages))
+    notifications_tasks = generate_notifications(1000)
+    task = asyncio.create_task(send_notification_task(notifications_tasks))
     await task
 
 
