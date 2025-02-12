@@ -1,119 +1,142 @@
-from typing import Any
+from abc import ABC, abstractmethod
+from typing import Any, Generic, Type, TypeVar
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import log
-from db.postgres import get_session
+from db.postgres import Base
 
-from services.pagination import PaginationParams
+ModelType = TypeVar("ModelType", bound=Base)  # type: ignore
+CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+DeleteSchemaType = TypeVar("DeleteSchemaType", bound=BaseModel)
 
 
-class DBService:
-    """Database managing service."""
+class Repository(ABC):
+    @abstractmethod
+    def get_one(self, *args, **kwargs): ...
 
-    def __init__(self, db_service: AsyncSession = Depends(get_session)):
-        self.db_service = db_service
+    @abstractmethod
+    def get_many(self, *args, **kwargs): ...
 
-    async def get_item_by_attribute(
-        self, model: Any, attribute: str, value: Any
-    ) -> Any | None:
-        """Get an item by attribute from the database."""
+    @abstractmethod
+    def get_many_with_condition(self, *args, **kwargs): ...
 
-        stmt = select(model).where(
-            model.__getattribute__(model, attribute) == value
-        )
-        item: Any | None = await self.db_service.scalar(stmt)
-        log.debug("\nitem by id: \n%s.\n", item)
-        if not item:
-            return None
-        log.info("\nGetting data from the db.\n")
-        return item
+    @abstractmethod
+    def create(self, *args, **kwargs): ...
 
-    async def get_items(
+    @abstractmethod
+    def update(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def delete(self, *args, **kwargs): ...
+
+
+class RepositoryDB(
+    Repository, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
+):
+    def __init__(self, model: Type[ModelType]):
+        self._model = model
+
+    async def get_one(self, db: AsyncSession, id: Any) -> ModelType | None:
+        """Gets the item by id."""
+
+        statement = select(self._model).where(self._model.id == id)
+        results = await db.execute(statement=statement)
+        return results.scalar_one_or_none()
+
+    async def get_many(
         self,
-        model: Any,
-        sort_field: str,
-        pagination: PaginationParams,
-    ) -> list[Any] | None:
-        """Get a list of items from the database."""
+        db: AsyncSession,
+        *,
+        sort="-created_at",
+        skip=0,
+        limit=100,
+    ) -> list[ModelType]:
+        """Gets a list of items."""
 
-        if sort_field is not None and len(sort_field) > 1:
-            order = (asc, desc)[sort_field.startswith("-")]
-            if sort_field.startswith(("-", "+")):
-                sort_field = sort_field[1:]
-        offset = (pagination.page_number - 1) * pagination.page_size
-        stmt = (
-            select(model)
-            .order_by(order(getattr(model, sort_field)))
-            .offset(offset)
-            .limit(pagination.page_size)
+        if sort is not None and len(sort) > 1:
+            order = (asc, desc)[sort.startswith("-")]
+            if sort.startswith(("-", "+")):
+                sort_field = sort[1:]
+            else:
+                sort_field = sort
+
+        statement = (
+            select(self._model)
+            .order_by(order(getattr(self._model, sort_field)))
+            .offset(skip)
+            .limit(limit)
         )
-        data = await self.db_service.scalars(stmt)
-        return data
+        results = await db.execute(statement=statement)
+        return results.scalars().all()
 
-    async def get_items_with_condition(
+    async def get_many_with_condition(
         self,
-        model: Any,
-        attribute: str,
+        db: AsyncSession,
+        *,
+        attribute: str | UUID,
         value: Any,
-        sort_field: str,
-        pagination: PaginationParams,
-    ) -> list[Any] | None:
-        """Get a list of items from the database with the condition."""
+        sort="-created_at",
+        skip=0,
+        limit=100,
+    ) -> list[ModelType]:
+        """Gets a list of items with the condition."""
 
-        if sort_field is not None and len(sort_field) > 1:
-            order = (asc, desc)[sort_field.startswith("-")]
-            if sort_field.startswith(("-", "+")):
-                sort_field = sort_field[1:]
-        offset = (pagination.page_number - 1) * pagination.page_size
-        stmt = (
-            select(model)
-            .where(model.__getattribute__(model, attribute) == value)
-            .order_by(order(getattr(model, sort_field)))
-            .offset(offset)
-            .limit(pagination.page_size)
+        if sort is not None and len(sort) > 1:
+            order = (asc, desc)[sort.startswith("-")]
+            if sort.startswith(("-", "+")):
+                sort_field = sort[1:]
+            else:
+                sort_field = sort
+
+        statement = (
+            select(self._model)
+            .where(
+                self._model.__getattribute__(self._model, attribute) == value
+            )
+            .order_by(order(getattr(self._model, sort_field)))
+            .offset(skip)
+            .limit(limit)
         )
-        data = await self.db_service.scalars(stmt)
-        return data
+        results = await db.execute(statement=statement)
+        return results.scalars().all()
 
-    async def get_last_item(
+    async def create(
+        self, db: AsyncSession, *, obj_in: CreateSchemaType
+    ) -> ModelType:
+        """Creates an item."""
+
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self._model(**obj_in_data)
+        db.add(db_obj)
+        await db.commit()
+        return db_obj
+
+    async def update(
         self,
-        model: Any,
-        attribute: str,
-        value: Any,
-        sort_field: str = "created_at",
-    ) -> Any | None:
-        """Get the last item by attribute from the database."""
+        db: AsyncSession,
+        *,
+        db_obj: ModelType,
+    ) -> ModelType:
+        """Updates the item."""
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
 
-        stmt = (
-            select(model)
-            .where(model.__getattribute__(model, attribute) == value)
-            .order_by(desc(getattr(model, sort_field)))
-            .limit(1)
-        )
-        data: Any | None = await self.db_service.scalar(stmt)
-        if not data:
-            return None
-        return data
+    async def delete(
+        self,
+        db: AsyncSession,
+        *,
+        db_obj: ModelType,
+    ) -> None:
+        """Deletes the item."""
 
-    async def put_item(self, model: Any, item: Any):
-        """Put an item to the database."""
-
-        self.db_service.add(item)
-        await self.db_service.commit()
-        await self.db_service.refresh(item)
-
-    async def update_item(self, model: Any, item: Any):
-        """Update the item in the database."""
-
-        await self.db_service.commit()
-        await self.db_service.refresh(item)
-
-    async def delete_item(self, model: Any, item: Any):
-        """Delete the item from the database."""
-
-        await self.db_service.delete(item)
-        await self.db_service.commit()
+        await db.delete(db_obj)
+        await db.commit()
+        db_obj = None
+        return db_obj

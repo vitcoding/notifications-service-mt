@@ -27,7 +27,7 @@ def generate_notifications(quantity: int = 100) -> list[dict[str, Any]]:
 
 async def send_notification_task(notifications: list[dict[str, Any]]) -> None:
     async with httpx.AsyncClient() as client:
-        url = "http://localhost:8006/api/v1/notification/"
+        url = "http://localhost:8006/api/v1/notifications/"
         for notification in notifications:
             response = await client.post(url=url, json=notification)
 
