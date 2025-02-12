@@ -17,6 +17,7 @@ from schemas.notifications import (
     NotificationDBView,
     NotificationUpdateDto,
 )
+from services.broker import BrokerService
 from services.database import RepositoryDB
 from services.pagination import PaginationParams
 
@@ -43,22 +44,9 @@ class NotificationsService:
         self,
         # cache_service: CacheService,
     ) -> None:
-        self._connection_pool: Pool | None = None
+        self.broker_service = BrokerService()
         self.repository_db = RepositoryDB(Notification)
         # self.cache_service = cache_service
-
-    async def initialize_connection_pool(self) -> None:
-        if not self._connection_pool:
-            self._connection_pool = Pool(
-                lambda: connect_robust(config.broker.connection),
-                max_size=10,
-            )
-            log.info("Connection pool initialized.")
-
-    async def close_connection_pool(self) -> None:
-        if self._connection_pool:
-            await self._connection_pool.close()
-            log.info("Connection pool closed.")
 
     async def add_notification_task(
         self,
@@ -66,30 +54,13 @@ class NotificationsService:
         exchange_name: str = EXCHANGE_NAME,
         queue_name: str = QUEUE_NAME,
     ) -> None:
-        try:
-            log.info(f"self._connection_pool: {self._connection_pool}")
 
-            log.debug(
-                f"\n\nnotification_task: \n{notification_task}"
-                f"\n\ntype(notification_task): \n{type(notification_task)}\n\n"
-            )
+        await self.broker_service.add_message(
+            notification_task, exchange_name, queue_name
+        )
 
-            await self.initialize_connection_pool()
-            async with self._connection_pool.acquire() as connection:
-                await broker_publisher(
-                    connection, exchange_name, queue_name, notification_task
-                )
-
-            # db write
-            await self.create_notification(notification_task)
-
-            log.info(f"\n[✅] {notification_task}")
-        except (AMQPConnectionError, AMQPChannelError) as err:
-            log.info(f"An error connecting to RabbitMQ: {err}")
-            raise
-        except Exception as err:
-            log.info(f"An unexpected error: {err}")
-            raise
+        # db write
+        await self.create_notification(notification_task)
 
     async def get_notifications(
         self,

@@ -9,8 +9,8 @@ from core.logger import log
 from db.postgres import get_db_session
 from models.notification import Notification
 from schemas.notifications import NotificationCreateDto
+from services.broker import BrokerService
 from services.database import RepositoryDB
-from services.notifications import broker_publisher
 
 EXCHANGE_NAME = "topic_notifications"
 ROUTING_KEYS = [
@@ -36,15 +36,17 @@ async def send_notification_task(
         "notification_type": "email",
     }
     notification_task = NotificationCreateDto(**message_data)
+
+    broker_service = BrokerService()
     connection = await connect_robust(config.broker.connection)
     async with connection:
-        await broker_publisher(
+        await broker_service.publish(
             connection, exchange_name, queue_name, notification_task
         )
 
-        repository_db = RepositoryDB(Notification)
-        async for db_session in get_db_session():
-            await repository_db.create(db_session, obj_in=notification_task)
+    repository_db = RepositoryDB(Notification)
+    async for db_session in get_db_session():
+        await repository_db.create(db_session, obj_in=notification_task)
 
 
 async def former_main() -> None:
