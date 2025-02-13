@@ -63,7 +63,7 @@ async def former_main() -> None:
 def former_task(self, name: str, do_tasks: bool = False) -> None:
     log.info(f"\n{'-'*30}\n{name} launched.\n")
 
-    do_tasks = True
+    # do_tasks = True
     if do_tasks:
         asyncio.run(former_main())
 

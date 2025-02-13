@@ -22,24 +22,9 @@ from services.database import RepositoryDB
 from services.pagination import PaginationParams
 
 
-async def broker_publisher(
-    connection, exchange_name, queue_name, notification_task
-):
-    async with connection.channel() as channel:
-        exchange = await channel.declare_exchange(
-            name=exchange_name, type=ExchangeType.TOPIC
-        )
-        queue = await channel.declare_queue(queue_name, durable=True)
-        await queue.bind(exchange=exchange, routing_key="#")
-        message_body = notification_task.model_dump_json().encode("utf-8")
-        message = Message(
-            message_body,
-            delivery_mode=DeliveryMode.PERSISTENT,
-        )
-        await exchange.publish(message, routing_key="#")
-
-
 class NotificationsService:
+    """A class for work with user notifications."""
+
     def __init__(
         self,
         # cache_service: CacheService,
@@ -54,6 +39,7 @@ class NotificationsService:
         exchange_name: str = EXCHANGE_NAME,
         queue_name: str = QUEUE_NAME,
     ) -> None:
+        """Adds a notification task."""
 
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name

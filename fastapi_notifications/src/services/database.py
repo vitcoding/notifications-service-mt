@@ -17,6 +17,8 @@ DeleteSchemaType = TypeVar("DeleteSchemaType", bound=BaseModel)
 
 
 class Repository(ABC):
+    """An abstract class for work with a database."""
+
     @abstractmethod
     def get_one(self, *args, **kwargs): ...
 
@@ -39,6 +41,8 @@ class Repository(ABC):
 class RepositoryDB(
     Repository, Generic[ModelType, CreateSchemaType, UpdateSchemaType]
 ):
+    """A class for work with a database."""
+
     def __init__(self, model: Type[ModelType]):
         self._model = model
 

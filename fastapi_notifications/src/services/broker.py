@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Coroutine
 
 from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
@@ -12,7 +13,25 @@ from core.config import config
 from core.logger import log
 
 
-class BrokerService:
+class Broker(ABC):
+    """An abstract class for work with a message broker."""
+
+    @abstractmethod
+    async def add_message(self, *args, **kwargs): ...
+
+    @abstractmethod
+    def publish(self, *args, **kwargs): ...
+
+    @abstractmethod
+    async def get_messages(self, *args, **kwargs): ...
+
+    @abstractmethod
+    async def consume(self, *args, **kwargs): ...
+
+
+class BrokerService(Broker):
+    """A class for work with a message broker."""
+
     def __init__(
         self,
     ) -> None:
@@ -72,7 +91,7 @@ class BrokerService:
         queue_name: str,
         message_data: Any,
     ) -> None:
-        """A method for publishing messages."""
+        """A method for producing messages."""
 
         async with connection.channel() as channel:
             exchange = await channel.declare_exchange(
