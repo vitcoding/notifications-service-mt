@@ -4,7 +4,7 @@ from datetime import datetime
 from celery import shared_task
 
 from core.config import config
-from core.constants import EXCHANGE_NAME, QUEUE_NAME
+from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from services.broker import BrokerService
 
@@ -16,7 +16,8 @@ async def process_message(message: str) -> None:
 
 
 async def queue_get_messages(
-    exchange_name: str = EXCHANGE_NAME, queue_name: str = QUEUE_NAME
+    exchange_name: str = EXCHANGES.FORMED_TASKS,
+    queue_name: str = QUEUES.FORMED_TASKS,
 ) -> None:
     log.info(f"Connecting to RabbitMQ...")
 

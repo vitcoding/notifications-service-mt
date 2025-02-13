@@ -1,61 +1,63 @@
 import asyncio
+import json
+from uuid import UUID
 
 from aio_pika import connect_robust
 from celery import shared_task
 
 from core.config import config
-from core.constants import EXCHANGE_NAME, QUEUE_NAME
+from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from db.postgres import get_db_session
 from models.notification import Notification
-from schemas.notifications import NotificationCreateDto
+from schemas.notifications import NotificationTask
 from services.broker import BrokerService
 from services.database import RepositoryDB
 
-EXCHANGE_NAME = "topic_notifications"
-ROUTING_KEYS = [
-    "notification.instant.telegram",
-    "notification.instant.email",
-    "notification.delayed.email",
-]
-COUNTER = 1
 
+async def get_profile_data(message: str) -> NotificationTask:
+    log.info(f"\nformer: \nmessage: {message}\n")
+    broker_service_temp = BrokerService()
+    connection_temp = await connect_robust(config.broker.connection)
+    notification_task = NotificationTask(**json.loads(message))
 
-async def send_notification_task(
-    message: str,
-    exchange_name: str = EXCHANGE_NAME,
-    queue_name: str = QUEUE_NAME,
-):
-    message_data = {
-        "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "user_name": "UserName",
-        "user_email": "email",
-        "template_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "subject": "Title",
-        "message": message,
-        "notification_type": "email",
-    }
-    notification_task = NotificationCreateDto(**message_data)
+    notification_task.user_name = "login"
+    notification_task.user_email = "email@email"
 
-    broker_service = BrokerService()
-    connection = await connect_robust(config.broker.connection)
-    async with connection:
-        await broker_service.publish(
-            connection, exchange_name, queue_name, notification_task
+    async with connection_temp:
+        await broker_service_temp.publish(
+            connection_temp,
+            EXCHANGES.FORMED_TASKS,
+            QUEUES.FORMED_TASKS,
+            notification_task,
         )
 
-    repository_db = RepositoryDB(Notification)
-    async for db_session in get_db_session():
-        await repository_db.create(db_session, obj_in=notification_task)
+
+async def publish_notification_task(notification_task):
+    broker_service2 = BrokerService()
+    connection = await connect_robust(config.broker.connection)
+    async with connection:
+        await broker_service2.publish(
+            connection,
+            EXCHANGES.FORMED_TASKS,
+            QUEUES.FORMED_TASKS,
+            notification_task,
+        )
+
+
+async def form_tasks() -> None:
+    broker_service = BrokerService()
+    await broker_service.get_messages(
+        EXCHANGES.CREATED_TASKS,
+        QUEUES.CREATED_TASKS,
+        get_profile_data,
+        batch_size=1000,
+    )
 
 
 async def former_main() -> None:
 
-    global COUNTER
-    task = asyncio.create_task(
-        send_notification_task(f"message_example {COUNTER}")
-    )
-    COUNTER += 1
+    task = asyncio.create_task(form_tasks())
     await task
 
 
@@ -63,7 +65,7 @@ async def former_main() -> None:
 def former_task(self, name: str, do_tasks: bool = False) -> None:
     log.info(f"\n{'-'*30}\n{name} launched.\n")
 
-    # do_tasks = True
+    do_tasks = True
     if do_tasks:
         asyncio.run(former_main())
 

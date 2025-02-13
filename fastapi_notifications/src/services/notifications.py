@@ -8,13 +8,14 @@ from fastapi import Depends, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
 from core.config import config
-from core.constants import EXCHANGE_NAME, QUEUE_NAME
+from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from db.postgres import get_db_session
 from models.notification import Notification
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
+    NotificationTask,
     NotificationUpdateDto,
 )
 from services.broker import BrokerService
@@ -35,12 +36,12 @@ class NotificationsService:
 
     async def add_notification_task(
         self,
-        notification_task: NotificationCreateDto,
-        exchange_name: str = EXCHANGE_NAME,
-        queue_name: str = QUEUE_NAME,
+        created_task: NotificationCreateDto,
+        exchange_name: str = EXCHANGES.CREATED_TASKS,
+        queue_name: str = QUEUES.CREATED_TASKS,
     ) -> None:
         """Adds a notification task."""
-
+        notification_task = NotificationTask(**created_task.model_dump())
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name
         )

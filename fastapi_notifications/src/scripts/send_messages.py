@@ -7,8 +7,6 @@ import httpx
 def get_message_data(message: str) -> dict[str, Any]:
     message_data = {
         "user_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        "user_name": "UserName",
-        "user_email": "email",
         "template_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         "subject": "Title",
         "message": message,
@@ -18,7 +16,7 @@ def get_message_data(message: str) -> dict[str, Any]:
     return message_data
 
 
-def generate_notifications(quantity: int = 100) -> list[dict[str, Any]]:
+def generate_notifications(quantity: int = 1000) -> list[dict[str, Any]]:
     notifications = [
         get_message_data(f"Message {i+1}") for i in range(quantity)
     ]
@@ -33,7 +31,7 @@ async def send_notification_task(notifications: list[dict[str, Any]]) -> None:
 
 
 async def main() -> None:
-    notifications_tasks = generate_notifications(1000)
+    notifications_tasks = generate_notifications(100000)
     task = asyncio.create_task(send_notification_task(notifications_tasks))
     await task
 

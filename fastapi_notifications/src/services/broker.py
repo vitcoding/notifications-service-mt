@@ -94,6 +94,7 @@ class BrokerService(Broker):
         """A method for producing messages."""
 
         async with connection.channel() as channel:
+            log.info(f"\nProducer: queue_name: {queue_name}")
             exchange = await channel.declare_exchange(
                 name=exchange_name, type=ExchangeType.TOPIC
             )
@@ -111,6 +112,7 @@ class BrokerService(Broker):
         exchange_name: str,
         queue_name: str,
         async_process_func: Callable | None = None,
+        batch_size: int = 1_000,
     ) -> Any:
         """Gets messages from the queue."""
 
@@ -120,7 +122,11 @@ class BrokerService(Broker):
             await self.initialize_connection_pool()
             async with self._connection_pool.acquire() as connection:
                 await self.consume(
-                    connection, exchange_name, queue_name, async_process_func
+                    connection,
+                    exchange_name,
+                    queue_name,
+                    async_process_func,
+                    batch_size,
                 )
 
         except (AMQPConnectionError, AMQPChannelError) as err:
@@ -136,7 +142,8 @@ class BrokerService(Broker):
         exchange_name: str,
         queue_name: str,
         async_process_func: Callable | None = None,
-    ) -> Any:
+        batch_size: int = 1_000,
+    ) -> list[str]:
         """A method for consuming messages."""
 
         async with connection:
@@ -147,17 +154,19 @@ class BrokerService(Broker):
                 name=exchange_name, type=ExchangeType.TOPIC
             )
 
-            log.info(f"\nqueue_name: {queue_name}")
+            log.info(f"\nConsumer: queue_name: {queue_name}")
             queue = await channel.declare_queue(name=queue_name, durable=True)
             await queue.bind(exchange, "#")
 
-            batch_size = 1_000
+            messages = []
             counter = 0
             while counter < batch_size:
                 try:
                     message = await queue.get(timeout=1)
                     message_body = message.body.decode("utf-8")
                     log.info(f"Got a message: {message_body}")
+
+                    messages.append(message_body)
 
                     # Process_message function
                     if async_process_func is not None:
@@ -169,5 +178,7 @@ class BrokerService(Broker):
                 except QueueEmpty:
                     log.info("\nNo messages available.\n")
                     break
+
+            return messages
 
         log.info(f"Broker: Connection closed.\n")

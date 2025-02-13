@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class NotificationCreateDto(BaseModel):
     user_id: UUID
-    user_name: str
-    user_email: str
+    # user_name: str
+    # user_email: str
     template_id: UUID
     subject: str
     message: str
@@ -17,6 +17,16 @@ class NotificationCreateDto(BaseModel):
 class NotificationUpdateDto(BaseModel):
     user_name: str
     user_email: str
+
+
+class NotificationTask(BaseModel):
+    user_id: UUID
+    user_name: str = Field(default="")
+    user_email: str = Field(default="")
+    template_id: UUID
+    subject: str
+    message: str
+    notification_type: str = Field(default="email")
 
 
 class NotificationDBView(BaseModel):
