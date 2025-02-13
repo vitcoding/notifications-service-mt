@@ -7,6 +7,12 @@ from core.config import config
 
 Base = declarative_base()
 
+dsn = (
+    f"postgresql+asyncpg://{config.db.user}:"
+    + f"{config.db.password}@{config.db.host}:"
+    + f"{config.db.port}/{config.db.db}"
+)
+
 engine = create_async_engine(
     url=config.db.url, echo=config.globals.log_sql_queries, future=True
 )
