@@ -104,7 +104,7 @@ async def form_tasks() -> None:
         EXCHANGES.CREATED_TASKS,
         QUEUES.CREATED_TASKS,
         form_task,
-        batch_size=1000,
+        batch_size=50,
     )
 
 
