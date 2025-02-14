@@ -62,6 +62,16 @@ rebuild-$(NTF-NAME):
 	make rebuild-$(NTF-NAME)-service
 	make rebuild-$(NTF-NAME)-scheduler
 	make rebuild-$(NTF-NAME)-sender
+
+tests-$(NTF-NAME):
+	make net-create
+	make up-rabbitmq
+	docker compose -f fastapi_notifications/src/tests/docker-compose.yml up -d --build --force-recreate
+	docker logs -f tests
+	docker compose -f fastapi_notifications/src/tests/docker-compose.yml down -v
+	make destroy-rabbitmq
+	make net-rm
+
 rebuild-$(NTF-NAME)-service:
 	docker compose -f $(NTF-DC) stop $(NTF-SERVICE-NAME)
 	docker compose -f $(NTF-DC) rm -f $(NTF-SERVICE-NAME)
