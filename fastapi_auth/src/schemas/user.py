@@ -12,6 +12,7 @@ class UserLogin(BaseModel):
 class UserCreate(UserLogin):
     first_name: str = Field("noname")
     last_name: str = Field("noname")
+    email: str = Field("no")
 
 
 class UserInDB(BaseModel):

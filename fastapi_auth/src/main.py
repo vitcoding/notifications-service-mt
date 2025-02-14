@@ -38,7 +38,7 @@ if settings.enable_tracer:
 
 app.add_middleware(
     RateLimiterMiddleware,
-    max_requests_per_window_size=20,
+    max_requests_per_window_size=60_000,
     window_size_in_seconds=60,
 )
 

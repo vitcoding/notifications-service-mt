@@ -2,10 +2,7 @@ import time
 from datetime import timedelta
 
 from fastapi import Request, Response
-from starlette.middleware.base import (
-    BaseHTTPMiddleware,
-    RequestResponseEndpoint,
-)
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 
@@ -15,7 +12,7 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        max_requests_per_window_size: int = 100,
+        max_requests_per_window_size: int = 60_000,
         window_size_in_seconds: int = 60,
     ):
         super().__init__(app)
