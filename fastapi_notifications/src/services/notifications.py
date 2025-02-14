@@ -1,4 +1,6 @@
+import json
 from functools import lru_cache
+from typing import Any
 from uuid import UUID
 
 from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
@@ -11,16 +13,21 @@ from core.config import config
 from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from db.postgres import get_db_session
+from db.redis import get_client
 from models.notification import Notification
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
     NotificationTask,
+    NotificationTaskCreate,
     NotificationUpdateDto,
 )
 from services.broker import BrokerService
+from services.cache import CacheService
 from services.database import RepositoryDB
 from services.pagination import PaginationParams
+
+CACHE_EXPIRE_IN_SECONDS = 60 * 60 * 24
 
 
 class NotificationsService:
@@ -32,25 +39,77 @@ class NotificationsService:
     ) -> None:
         self.broker_service = BrokerService()
         self.repository_db = RepositoryDB(Notification)
-        # self.cache_service = cache_service
+        self.cache_service = CacheService()
 
     async def add_notification_task(
         self,
         created_task: NotificationCreateDto,
         exchange_name: str = EXCHANGES.CREATED_TASKS,
         queue_name: str = QUEUES.CREATED_TASKS,
-    ) -> NotificationDBView:
+    ) -> NotificationTaskCreate:  # NotificationDBView:
         """Adds a notification task."""
 
-        # db write
-        notification = await self.create_notification(created_task)
+        notification_task_created = NotificationTaskCreate(
+            **created_task.model_dump()
+        )
+        notification_task = NotificationTask(
+            **notification_task_created.model_dump()
+        )
 
-        notification_task = NotificationTask(**notification.model_dump())
+        # db write
+        # notification = await self.create_notification(created_task)
+
+        key = f"{notification_task.notification_id}: created"
+        await self.put_to_cache(key, notification_task, NotificationTask)
+
+        # notification_task = NotificationTask(**notification.model_dump())
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name
         )
 
-        return notification
+        # return notification
+        return notification_task
+
+    async def get_from_cache(
+        self, key: str, schema: Any, is_list: bool = False
+    ) -> Any:
+        """Get data from cache."""
+
+        # client = await get_client()
+        async for client in get_client():
+            data = await self.cache_service.get(client, key)
+
+            if not data:
+                return None
+
+            if is_list:
+                collection = [
+                    schema(**row) for row in json.loads(data.decode())
+                ]
+                return collection
+            return schema.parse_raw(data)
+
+    async def put_to_cache(
+        self,
+        key: str,
+        data: Any,
+        schema: Any,
+        expire: int = CACHE_EXPIRE_IN_SECONDS,
+    ) -> None:
+        """Put data in cache."""
+
+        # client = await get_client()
+        async for client in get_client():
+            if isinstance(data, list):
+                serialized_data = json.dumps(
+                    [dict(schema(**dict(item))) for item in data]
+                )
+            else:
+                serialized_data = data.json()
+
+            await self.cache_service.set(
+                client, key, serialized_data, expire=expire
+            )
 
     async def get_notifications(
         self,

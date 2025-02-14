@@ -8,6 +8,7 @@ from celery import shared_task
 from core.config import config
 from core.constants import EXCHANGES, QUEUES
 from core.logger import log
+from schemas.access import UserAccess
 from schemas.notifications import NotificationTask, NotificationUpdateDto
 from schemas.user import UserAuth
 from services.broker import BrokerService
@@ -23,25 +24,32 @@ async def get_access_token():
         response = await client.post(url=url, json=json_data)
 
         users_access_token = response.cookies.get("users_access_token")
-        return users_access_token
+        admin_access = UserAccess(users_access_token=users_access_token)
+
+        notifications_service = NotificationsService()
+        await notifications_service.put_to_cache(
+            "admin_token", admin_access, UserAccess, 29 * 60
+        )
+        return admin_access
 
 
+### {'detail': 'The user not found.'}
 async def get_profile_data(
+    access_data: UserAccess,
     notification_task: NotificationTask,
 ) -> NotificationTask:
     """Gets the user profile data."""
 
-    access_token = await get_access_token()
     log.info(
         f"\n{__name__}: {get_profile_data.__name__}: \n"
-        f"users_access_token: {access_token}\n"
+        f"access_data: {access_data.model_dump()}\n"
     )
 
     user_id = notification_task.user_id
     url = f"http://localhost:8001/api/v1/admin/users/{user_id}"
-    admin_cookies = {"users_access_token": access_token}
+    # admin_cookies = {"users_access_token": access_token}
     async with httpx.AsyncClient() as client:
-        response = await client.get(url=url, cookies=admin_cookies)
+        response = await client.get(url=url, cookies=access_data.model_dump())
         profile = response.content
 
     log.info(
@@ -56,19 +64,32 @@ async def update_profile_data(
 ) -> NotificationTask:
     """Updates notification task with the user profile data."""
 
-    profile_response = await get_profile_data(notification_task)
+    notifications_service = NotificationsService()
+    access_data = await notifications_service.get_from_cache(
+        "admin_token", UserAccess
+    )
+    if access_data is None:
+        access_data = await get_access_token()
+
+    profile_response = await get_profile_data(access_data, notification_task)
     profile = UserAuth(**json.loads(profile_response))
 
-    notification_update = NotificationUpdateDto(
-        user_name=profile.first_name, user_email=profile.email
-    )
+    # notification_update = NotificationUpdateDto(
+    #     user_name=profile.first_name, user_email=profile.email
+    # )
+    notification_task.user_name = profile.first_name
+    notification_task.user_email = profile.email
 
-    notifications_service = NotificationsService()
-    notification = await notifications_service.update_notification(
-        notification_task.id, notification_update
+    # notification = await notifications_service.update_notification(
+    #     notification_task.id, notification_update
+    # )
+    key = f"{notification_task.notification_id}: updated"
+    await notifications_service.put_to_cache(
+        key, notification_task, NotificationTask
     )
-    notification_task_updated = NotificationTask(**notification.model_dump())
-    return notification_task_updated
+    # notification_task_updated = NotificationTask(**notification.model_dump())
+    # return notification_task_updated
+    return notification_task
 
 
 async def form_task(message: str) -> None:
@@ -104,7 +125,7 @@ async def form_tasks() -> None:
         EXCHANGES.CREATED_TASKS,
         QUEUES.CREATED_TASKS,
         form_task,
-        batch_size=50,
+        batch_size=1_000,
     )
 
 

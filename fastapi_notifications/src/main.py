@@ -3,22 +3,21 @@ from contextlib import asynccontextmanager
 from celery import Celery
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
+from redis.asyncio import Redis
 
 from api import router
 from core.config import config
+from db import redis
 from middleware.rate_limiter import RateLimiterMiddleware
 from tasks.former import former_task
 from tasks.sender import sender_task
 
-# from redis.asyncio import Redis
-# from db import redis
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
+    redis.redis = Redis(host=config.cache.host, port=config.cache.port)
     yield
-    # await redis.redis.close()
+    await redis.redis.close()
 
 
 # App configuration
