@@ -74,22 +74,22 @@ async def update_profile_data(
     profile_response = await get_profile_data(access_data, notification_task)
     profile = UserAuth(**json.loads(profile_response))
 
-    # notification_update = NotificationUpdateDto(
-    #     user_name=profile.first_name, user_email=profile.email
-    # )
-    notification_task.user_name = profile.first_name
-    notification_task.user_email = profile.email
-
-    # notification = await notifications_service.update_notification(
-    #     notification_task.id, notification_update
-    # )
-    key = f"{notification_task.notification_id}: updated"
-    await notifications_service.put_to_cache(
-        key, notification_task, NotificationTask
+    notification_update = NotificationUpdateDto(
+        user_name=profile.first_name, user_email=profile.email
     )
-    # notification_task_updated = NotificationTask(**notification.model_dump())
-    # return notification_task_updated
-    return notification_task
+    # notification_task.user_name = profile.first_name
+    # notification_task.user_email = profile.email
+
+    notification = await notifications_service.update_notification(
+        notification_task.id, notification_update
+    )
+    # key = f"{notification_task.notification_id}: updated"
+    # await notifications_service.put_to_cache(
+    #     key, notification_task, NotificationTask
+    # )
+    notification_task_updated = NotificationTask(**notification.model_dump())
+    return notification_task_updated
+    # return notification_task
 
 
 async def form_task(message: str) -> None:

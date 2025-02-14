@@ -31,7 +31,7 @@ async def send_notification_task(notifications: list[dict[str, Any]]) -> None:
 
 
 async def main() -> None:
-    notifications_tasks = generate_notifications(1000)
+    notifications_tasks = generate_notifications(1_000)
     task = asyncio.create_task(send_notification_task(notifications_tasks))
     await task
 

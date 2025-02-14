@@ -17,22 +17,23 @@ class NotificationUpdateDto(BaseModel):
     user_email: str
 
 
-class NotificationTaskCreate(BaseModel):
-    notification_id: UUID
-    user_id: UUID
-    user_name: str
-    user_email: str
-    template_id: UUID
-    subject: str
-    message: str
-    notification_type: str
-    user_name: str = Field(default="")
-    user_email: str = Field(default="")
-    notification_id: UUID = Field(default=uuid4())
+# class NotificationTaskCreate(BaseModel):
+#     notification_id: UUID
+#     user_id: UUID
+#     user_name: str
+#     user_email: str
+#     template_id: UUID
+#     subject: str
+#     message: str
+#     notification_type: str
+#     user_name: str = Field(default="")
+#     user_email: str = Field(default="")
+#     notification_id: UUID = Field(default=uuid4())
 
 
 class NotificationTask(BaseModel):
-    notification_id: UUID
+    # notification_id: UUID
+    id: UUID
     user_id: UUID
     user_name: str
     user_email: str

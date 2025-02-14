@@ -15,11 +15,10 @@ from core.logger import log
 from db.postgres import get_db_session
 from db.redis import get_client
 from models.notification import Notification
-from schemas.notifications import (
+from schemas.notifications import (  # NotificationTaskCreate,
     NotificationCreateDto,
     NotificationDBView,
     NotificationTask,
-    NotificationTaskCreate,
     NotificationUpdateDto,
 )
 from services.broker import BrokerService
@@ -46,36 +45,35 @@ class NotificationsService:
         created_task: NotificationCreateDto,
         exchange_name: str = EXCHANGES.CREATED_TASKS,
         queue_name: str = QUEUES.CREATED_TASKS,
-    ) -> NotificationTaskCreate:  # NotificationDBView:
+    ) -> NotificationDBView:  # NotificationTaskCreate:
         """Adds a notification task."""
 
-        notification_task_created = NotificationTaskCreate(
-            **created_task.model_dump()
-        )
-        notification_task = NotificationTask(
-            **notification_task_created.model_dump()
-        )
+        # notification_task_created = NotificationTaskCreate(
+        #     **created_task.model_dump()
+        # )
+        # notification_task = NotificationTask(
+        #     **notification_task_created.model_dump()
+        # )
 
-        # db write
-        # notification = await self.create_notification(created_task)
+        ### db write
+        notification = await self.create_notification(created_task)
 
-        key = f"{notification_task.notification_id}: created"
-        await self.put_to_cache(key, notification_task, NotificationTask)
+        # key = f"{notification_task.notification_id}: created"
+        # await self.put_to_cache(key, notification_task, NotificationTask)
 
-        # notification_task = NotificationTask(**notification.model_dump())
+        notification_task = NotificationTask(**notification.model_dump())
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name
         )
 
-        # return notification
-        return notification_task
+        return notification
+        # return notification_task
 
     async def get_from_cache(
         self, key: str, schema: Any, is_list: bool = False
     ) -> Any:
         """Get data from cache."""
 
-        # client = await get_client()
         async for client in get_client():
             data = await self.cache_service.get(client, key)
 
@@ -98,7 +96,6 @@ class NotificationsService:
     ) -> None:
         """Put data in cache."""
 
-        # client = await get_client()
         async for client in get_client():
             if isinstance(data, list):
                 serialized_data = json.dumps(
