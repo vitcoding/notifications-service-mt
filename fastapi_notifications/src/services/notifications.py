@@ -3,19 +3,15 @@ from functools import lru_cache
 from typing import Any
 from uuid import UUID
 
-from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
-from aio_pika.exceptions import AMQPChannelError, AMQPConnectionError
-from aio_pika.pool import Pool
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
-from core.config import config
 from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from db.postgres import get_db_session
 from db.redis import get_client
 from models.notification import Notification
-from schemas.notifications import (  # NotificationTaskCreate,
+from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
     NotificationTask,
@@ -34,7 +30,6 @@ class NotificationsService:
 
     def __init__(
         self,
-        # cache_service: CacheService,
     ) -> None:
         self.broker_service = BrokerService()
         self.repository_db = RepositoryDB(Notification)
@@ -45,21 +40,11 @@ class NotificationsService:
         created_task: NotificationCreateDto,
         exchange_name: str = EXCHANGES.CREATED_TASKS,
         queue_name: str = QUEUES.CREATED_TASKS,
-    ) -> NotificationDBView:  # NotificationTaskCreate:
+    ) -> NotificationDBView:
         """Adds a notification task."""
-
-        # notification_task_created = NotificationTaskCreate(
-        #     **created_task.model_dump()
-        # )
-        # notification_task = NotificationTask(
-        #     **notification_task_created.model_dump()
-        # )
 
         ### db write
         notification = await self.create_notification(created_task)
-
-        # key = f"{notification_task.notification_id}: created"
-        # await self.put_to_cache(key, notification_task, NotificationTask)
 
         notification_task = NotificationTask(**notification.model_dump())
         await self.broker_service.add_message(
@@ -67,7 +52,6 @@ class NotificationsService:
         )
 
         return notification
-        # return notification_task
 
     async def get_from_cache(
         self, key: str, schema: Any, is_list: bool = False
@@ -248,10 +232,6 @@ class NotificationsService:
 
 
 @lru_cache()
-def get_notifications_service(
-    # cache: Redis = Depends(get_redis),
-) -> NotificationsService:
+def get_notifications_service() -> NotificationsService:
     """NotificationsService provider."""
-    # cache_service = CacheService(cache)
     return NotificationsService()
-    # return NotificationsService(cache_service)

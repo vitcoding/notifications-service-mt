@@ -47,10 +47,12 @@ async def get_profile_data(
 
     user_id = notification_task.user_id
     url = f"http://localhost:8001/api/v1/admin/users/{user_id}"
-    # admin_cookies = {"users_access_token": access_token}
     async with httpx.AsyncClient() as client:
         response = await client.get(url=url, cookies=access_data.model_dump())
         profile = response.content
+
+    if response.status_code != 200:
+        return None
 
     log.info(
         f"\n{__name__}: {get_profile_data.__name__}: \n"
@@ -61,7 +63,7 @@ async def get_profile_data(
 
 async def update_profile_data(
     notification_task: NotificationTask,
-) -> NotificationTask:
+) -> NotificationTask | None:
     """Updates notification task with the user profile data."""
 
     notifications_service = NotificationsService()
@@ -72,24 +74,21 @@ async def update_profile_data(
         access_data = await get_access_token()
 
     profile_response = await get_profile_data(access_data, notification_task)
-    profile = UserAuth(**json.loads(profile_response))
+    if profile_response:
+        profile = UserAuth(**json.loads(profile_response))
 
-    notification_update = NotificationUpdateDto(
-        user_name=profile.first_name, user_email=profile.email
-    )
-    # notification_task.user_name = profile.first_name
-    # notification_task.user_email = profile.email
+        notification_update = NotificationUpdateDto(
+            user_name=profile.first_name, user_email=profile.email
+        )
 
-    notification = await notifications_service.update_notification(
-        notification_task.id, notification_update
-    )
-    # key = f"{notification_task.notification_id}: updated"
-    # await notifications_service.put_to_cache(
-    #     key, notification_task, NotificationTask
-    # )
-    notification_task_updated = NotificationTask(**notification.model_dump())
-    return notification_task_updated
-    # return notification_task
+        notification = await notifications_service.update_notification(
+            notification_task.id, notification_update
+        )
+        notification_task_updated = NotificationTask(
+            **notification.model_dump()
+        )
+        return notification_task_updated
+    return None
 
 
 async def form_task(message: str) -> None:
@@ -103,18 +102,19 @@ async def form_task(message: str) -> None:
     notification_task_updated = await update_profile_data(
         notification_task_created
     )
-    log.info(
-        f"\n{__name__}: {form_task.__name__}: \nnotification_task_updated: "
-        f"{notification_task_updated.model_dump()}\n"
-    )
-
-    async with connection_temp:
-        await broker_service_temp.publish(
-            connection_temp,
-            EXCHANGES.FORMED_TASKS,
-            QUEUES.FORMED_TASKS,
-            notification_task_updated,
+    if notification_task_updated:
+        log.info(
+            f"\n{__name__}: {form_task.__name__}: \nnotification_task_updated: "
+            f"{notification_task_updated.model_dump()}\n"
         )
+
+        async with connection_temp:
+            await broker_service_temp.publish(
+                connection_temp,
+                EXCHANGES.FORMED_TASKS,
+                QUEUES.FORMED_TASKS,
+                notification_task_updated,
+            )
 
 
 async def form_tasks() -> None:
