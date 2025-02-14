@@ -39,15 +39,18 @@ class NotificationsService:
         created_task: NotificationCreateDto,
         exchange_name: str = EXCHANGES.CREATED_TASKS,
         queue_name: str = QUEUES.CREATED_TASKS,
-    ) -> None:
+    ) -> NotificationDBView:
         """Adds a notification task."""
-        notification_task = NotificationTask(**created_task.model_dump())
+
+        # db write
+        notification = await self.create_notification(created_task)
+
+        notification_task = NotificationTask(**notification.model_dump())
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name
         )
 
-        # db write
-        await self.create_notification(notification_task)
+        return notification
 
     async def get_notifications(
         self,

@@ -33,18 +33,6 @@ async def get_profile_data(message: str) -> NotificationTask:
         )
 
 
-async def publish_notification_task(notification_task):
-    broker_service2 = BrokerService()
-    connection = await connect_robust(config.broker.connection)
-    async with connection:
-        await broker_service2.publish(
-            connection,
-            EXCHANGES.FORMED_TASKS,
-            QUEUES.FORMED_TASKS,
-            notification_task,
-        )
-
-
 async def form_tasks() -> None:
     broker_service = BrokerService()
     await broker_service.get_messages(

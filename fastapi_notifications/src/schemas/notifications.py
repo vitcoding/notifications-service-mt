@@ -20,9 +20,10 @@ class NotificationUpdateDto(BaseModel):
 
 
 class NotificationTask(BaseModel):
+    id: UUID
     user_id: UUID
-    user_name: str = Field(default="")
-    user_email: str = Field(default="")
+    user_name: str
+    user_email: str
     template_id: UUID
     subject: str
     message: str
