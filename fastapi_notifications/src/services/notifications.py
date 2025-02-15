@@ -15,7 +15,8 @@ from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
     NotificationTask,
-    NotificationUpdateDto,
+    NotificationUpdateProfileDto,
+    NotificationUpdateTimeDto,
 )
 from services.broker import BrokerService
 from services.cache import CacheService
@@ -175,7 +176,9 @@ class NotificationsService:
     async def update_notification(
         self,
         notification_id: str | UUID,
-        notification_data: NotificationUpdateDto,
+        notification_data: (
+            NotificationUpdateProfileDto | NotificationUpdateTimeDto
+        ),
     ) -> NotificationDBView:
         """Updates the notification by id."""
 
@@ -192,9 +195,13 @@ class NotificationsService:
             log.debug(
                 f"\nnotification_db.as_dict: \n{notification_db.as_dict()}"
             )
-
-            notification_db.user_name = notification_data.user_name
-            notification_db.user_email = notification_data.user_email
+            if isinstance(notification_data, NotificationUpdateProfileDto):
+                notification_db.user_name = notification_data.user_name
+                notification_db.user_email = notification_data.user_email
+            elif isinstance(notification_data, NotificationUpdateTimeDto):
+                notification_db.last_sent_at = notification_data.last_sent_at
+            else:
+                return None
 
             updated_notification_db = await self.repository_db.update(
                 db_session, db_obj=notification_db

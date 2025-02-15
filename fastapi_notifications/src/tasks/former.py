@@ -9,7 +9,10 @@ from core.config import config
 from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from schemas.access import UserAccess
-from schemas.notifications import NotificationTask, NotificationUpdateDto
+from schemas.notifications import (
+    NotificationTask,
+    NotificationUpdateProfileDto,
+)
 from schemas.user import UserAuth
 from services.broker import BrokerService
 from services.notifications import NotificationsService
@@ -33,7 +36,6 @@ async def get_access_token():
         return admin_access
 
 
-### {'detail': 'The user not found.'}
 async def get_profile_data(
     access_data: UserAccess,
     notification_task: NotificationTask,
@@ -77,7 +79,7 @@ async def update_profile_data(
     if profile_response:
         profile = UserAuth(**json.loads(profile_response))
 
-        notification_update = NotificationUpdateDto(
+        notification_update = NotificationUpdateProfileDto(
             user_name=profile.first_name, user_email=profile.email
         )
 
@@ -104,7 +106,8 @@ async def form_task(message: str) -> None:
     )
     if notification_task_updated:
         log.info(
-            f"\n{__name__}: {form_task.__name__}: \nnotification_task_updated: "
+            f"\n{__name__}: {form_task.__name__}: "
+            f"\nnotification_task_updated: "
             f"{notification_task_updated.model_dump()}\n"
         )
 
@@ -115,6 +118,10 @@ async def form_task(message: str) -> None:
                 QUEUES.FORMED_TASKS,
                 notification_task_updated,
             )
+    else:
+        log.warning(
+            f"The user (id={notification_task_created.user_id}) not found"
+        )
 
 
 async def form_tasks() -> None:

@@ -1,8 +1,5 @@
 from pydantic import BaseModel, Field
 
-# QUEUE_NAME = "notifications"
-# EXCHANGE_NAME = "topic_notifications"
-
 
 class EXCHANGE_NAMES(BaseModel):
     CREATED_TASKS: str = Field(default="topic_created")

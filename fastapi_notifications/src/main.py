@@ -40,7 +40,7 @@ celery_app.conf.beat_schedule = {
     "former-background-task": {
         "task": "tasks.former.former_task",
         "schedule": 2.0,
-        "args": ("scheduler-app",),
+        "args": ("former-app",),
     },
     "sender-background-task": {
         "task": "tasks.sender.sender_task",

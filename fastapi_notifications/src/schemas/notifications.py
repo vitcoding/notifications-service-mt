@@ -12,9 +12,13 @@ class NotificationCreateDto(BaseModel):
     notification_type: str = Field(default="email")
 
 
-class NotificationUpdateDto(BaseModel):
+class NotificationUpdateProfileDto(BaseModel):
     user_name: str
     user_email: str
+
+
+class NotificationUpdateTimeDto(BaseModel):
+    last_sent_at: datetime
 
 
 class NotificationTask(BaseModel):
