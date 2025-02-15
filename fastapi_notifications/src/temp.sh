@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
 
-set -e
-
-echo "Waiting for PostgreSQL to start..."
-while ! nc -z $POSTGRES_HOST $POSTGRES_PORT; do
-    sleep 0.5
-done
-
-echo "PostgreSQL started"
-
-
-alembic upgrade head
-
-
+POSTGRES_HOST="localhost"
+POSTGRES_PORT="5432"
+POSTGRES_USER="postgres"
+POSTGRES_PASSWORD="secret"
+POSTGRES_DB="notifications_db"
 TABLE="public.notifications"
 
 DATA="\
@@ -39,6 +31,3 @@ else
   echo "Failed to insert data."
 fi
 
-
-
-gunicorn -c gunicorn.conf.py main:app
