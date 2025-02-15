@@ -9,6 +9,7 @@ from api import router
 from core.config import config
 from db import redis
 from middleware.rate_limiter import RateLimiterMiddleware
+from tasks.eventer import eventer_task
 from tasks.former import former_task
 from tasks.sender import sender_task
 
@@ -44,8 +45,13 @@ celery_app.conf.beat_schedule = {
     },
     "sender-background-task": {
         "task": "tasks.sender.sender_task",
-        "schedule": 5.0,
+        "schedule": 3.0,
         "args": ("sender-app",),
+    },
+    "eventer-background-task": {
+        "task": "tasks.eventer.eventer_task",
+        "schedule": 10.0,
+        "args": ("eventer-app",),
     },
 }
 

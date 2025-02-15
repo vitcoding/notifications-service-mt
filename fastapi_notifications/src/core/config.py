@@ -19,6 +19,7 @@ class GlobalConfig(BaseSettings):
         default=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     log_sql_queries: bool = True
+    generate_events: bool = Field(default=False)
 
 
 class DataBaseConfig(BaseSettings):

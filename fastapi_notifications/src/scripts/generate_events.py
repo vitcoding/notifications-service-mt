@@ -5,7 +5,7 @@ from typing import Any
 import httpx
 
 
-def get_message_data(message: str) -> dict[str, Any]:
+def get_message_data(message: str, type_: str) -> dict[str, Any]:
     message_data = {
         "user_id": choice(
             [
@@ -23,17 +23,19 @@ def get_message_data(message: str) -> dict[str, Any]:
             ]
         ),
         "message": message,
-        "notification_type": "email",
+        "notification_type": type_,
     }
 
     return message_data
 
 
-def generate_notifications(quantity: int = 1000) -> list[dict[str, Any]]:
+def generate_notifications(
+    quantity: int = 1_000, type_: str = "generated"
+) -> list[dict[str, Any]]:
     """Generates notifications."""
 
     notifications = [
-        get_message_data(f"Message {i+1}") for i in range(quantity)
+        get_message_data(f"Message {i+1}", type_) for i in range(quantity)
     ]
     return notifications
 
