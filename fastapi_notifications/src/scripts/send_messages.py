@@ -6,7 +6,7 @@ import httpx
 
 def get_message_data(message: str) -> dict[str, Any]:
     message_data = {
-        "user_id": "f98e1eed-9516-4de2-bea1-30e552e48e5d",
+        "user_id": "00000000-0000-0000-0000-000000000001",
         "template_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         "subject": "Title",
         "message": message,

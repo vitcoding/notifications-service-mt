@@ -23,7 +23,3 @@ celery-worker:
 
 clean:
 	rm -f _temp/logs/logs.log
-
-# script:
-# 	chmod +x script.sh
-# 	./script.sh
