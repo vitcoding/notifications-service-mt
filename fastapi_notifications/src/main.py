@@ -56,11 +56,11 @@ celery_app.conf.beat_schedule = {
 }
 
 
-# app.add_middleware(
-#     RateLimiterMiddleware,
-#     max_requests_per_window_size=20,
-#     window_size_in_seconds=60,
-# )
+app.add_middleware(
+    RateLimiterMiddleware,
+    max_requests_per_window_size=60_000,
+    window_size_in_seconds=60,
+)
 
 # Router connection to the server
 app.include_router(router, prefix="/api")
