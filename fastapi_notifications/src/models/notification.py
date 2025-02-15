@@ -18,8 +18,8 @@ class Notification(Base):
         nullable=False,
     )
     user_id = Column(UUID, nullable=False)
-    user_name = Column(String(255), nullable=False)
-    user_email = Column(String(255), nullable=False)
+    user_name = Column(String(255), nullable=False, default="")
+    user_email = Column(String(255), nullable=False, default="")
     template_id = Column(UUID, nullable=False)
     subject = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
@@ -33,12 +33,12 @@ class Notification(Base):
     def __init__(
         self,
         user_id: UUID,
-        user_name: str,
-        user_email: str,
         template_id: UUID,
         subject: str,
         message: str,
         notification_type: str,
+        user_name: str = "",
+        user_email: str = "",
         last_sent_at: datetime | None = None,
     ) -> None:
         self.user_id = user_id

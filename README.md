@@ -1,1 +1,1 @@
-# notifications-service-mt
+# Notifications service

@@ -1,25 +1,29 @@
+import json
 from functools import lru_cache
+from typing import Any
 from uuid import UUID
 
-from aio_pika import DeliveryMode, ExchangeType, Message, connect_robust
-from aio_pika.exceptions import AMQPChannelError, AMQPConnectionError
-from aio_pika.pool import Pool
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 
-from core.config import config
-from core.constants import EXCHANGE_NAME, QUEUE_NAME
+from core.constants import EXCHANGES, QUEUES
 from core.logger import log
 from db.postgres import get_db_session
+from db.redis import get_client
 from models.notification import Notification
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
-    NotificationUpdateDto,
+    NotificationTask,
+    NotificationUpdateProfileDto,
+    NotificationUpdateTimeDto,
 )
 from services.broker import BrokerService
+from services.cache import CacheService
 from services.database import RepositoryDB
 from services.pagination import PaginationParams
+
+CACHE_EXPIRE_IN_SECONDS = 60 * 60 * 24
 
 
 class NotificationsService:
@@ -27,26 +31,67 @@ class NotificationsService:
 
     def __init__(
         self,
-        # cache_service: CacheService,
     ) -> None:
         self.broker_service = BrokerService()
         self.repository_db = RepositoryDB(Notification)
-        # self.cache_service = cache_service
+        self.cache_service = CacheService()
 
     async def add_notification_task(
         self,
-        notification_task: NotificationCreateDto,
-        exchange_name: str = EXCHANGE_NAME,
-        queue_name: str = QUEUE_NAME,
-    ) -> None:
+        created_task: NotificationCreateDto,
+        exchange_name: str = EXCHANGES.CREATED_TASKS,
+        queue_name: str = QUEUES.CREATED_TASKS,
+    ) -> NotificationDBView:
         """Adds a notification task."""
 
+        ### db write
+        notification = await self.create_notification(created_task)
+
+        notification_task = NotificationTask(**notification.model_dump())
         await self.broker_service.add_message(
             notification_task, exchange_name, queue_name
         )
 
-        # db write
-        await self.create_notification(notification_task)
+        return notification
+
+    async def get_from_cache(
+        self, key: str, schema: Any, is_list: bool = False
+    ) -> Any:
+        """Get data from cache."""
+
+        async for client in get_client():
+            data = await self.cache_service.get(client, key)
+
+            if not data:
+                return None
+
+            if is_list:
+                collection = [
+                    schema(**row) for row in json.loads(data.decode())
+                ]
+                return collection
+            return schema.parse_raw(data)
+
+    async def put_to_cache(
+        self,
+        key: str,
+        data: Any,
+        schema: Any,
+        expire: int = CACHE_EXPIRE_IN_SECONDS,
+    ) -> None:
+        """Put data in cache."""
+
+        async for client in get_client():
+            if isinstance(data, list):
+                serialized_data = json.dumps(
+                    [dict(schema(**dict(item))) for item in data]
+                )
+            else:
+                serialized_data = data.json()
+
+            await self.cache_service.set(
+                client, key, serialized_data, expire=expire
+            )
 
     async def get_notifications(
         self,
@@ -131,7 +176,9 @@ class NotificationsService:
     async def update_notification(
         self,
         notification_id: str | UUID,
-        notification_data: NotificationUpdateDto,
+        notification_data: (
+            NotificationUpdateProfileDto | NotificationUpdateTimeDto
+        ),
     ) -> NotificationDBView:
         """Updates the notification by id."""
 
@@ -148,9 +195,13 @@ class NotificationsService:
             log.debug(
                 f"\nnotification_db.as_dict: \n{notification_db.as_dict()}"
             )
-
-            notification_db.user_name = notification_data.user_name
-            notification_db.user_email = notification_data.user_email
+            if isinstance(notification_data, NotificationUpdateProfileDto):
+                notification_db.user_name = notification_data.user_name
+                notification_db.user_email = notification_data.user_email
+            elif isinstance(notification_data, NotificationUpdateTimeDto):
+                notification_db.last_sent_at = notification_data.last_sent_at
+            else:
+                return None
 
             updated_notification_db = await self.repository_db.update(
                 db_session, db_obj=notification_db
@@ -188,10 +239,6 @@ class NotificationsService:
 
 
 @lru_cache()
-def get_notifications_service(
-    # cache: Redis = Depends(get_redis),
-) -> NotificationsService:
+def get_notifications_service() -> NotificationsService:
     """NotificationsService provider."""
-    # cache_service = CacheService(cache)
     return NotificationsService()
-    # return NotificationsService(cache_service)

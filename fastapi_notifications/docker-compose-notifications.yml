@@ -18,6 +18,8 @@ services:
   notifications-cache:
     image: redis
     container_name: ${REDIS_DB}
+    env_file:
+      - ./.env
     expose:
       - ${REDIS_PORT}
     volumes:

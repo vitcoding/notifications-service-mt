@@ -1,24 +1,48 @@
 import asyncio
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 
 from celery import shared_task
 
 from core.config import config
-from core.constants import EXCHANGE_NAME, QUEUE_NAME
+from core.constants import EXCHANGES, QUEUES
 from core.logger import log
+from schemas.notifications import NotificationTask, NotificationUpdateTimeDto
 from services.broker import BrokerService
+from services.notifications import NotificationsService
 
 
 async def process_message(message: str) -> None:
-    log.info(f"[🎉] the message '{message}' sent.")
+    """Processes a message from the broker."""
+
+    log.info(
+        f"\n{__name__}: {process_message.__name__}: "
+        f"\n[🎉🎉🎉🎉🎉🎉🎉] \nthe message '{message}' sent."
+    )
+    timestamp = datetime.now(timezone.utc).isoformat()
     with open("./_temp/logs/logs.log", mode="a", encoding="utf-8") as fwa:
-        fwa.writelines(f"{datetime.now().isoformat()}: {message}\n")
+        fwa.writelines(f"{timestamp}: {message}\n")
+
+    notification_task = NotificationTask(**json.loads(message))
+    notification_id = notification_task.id
+    notification_update = NotificationUpdateTimeDto(last_sent_at=timestamp)
+
+    notifications_service = NotificationsService()
+    await notifications_service.update_notification(
+        notification_id, notification_update
+    )
 
 
 async def queue_get_messages(
-    exchange_name: str = EXCHANGE_NAME, queue_name: str = QUEUE_NAME
+    exchange_name: str = EXCHANGES.FORMED_TASKS,
+    queue_name: str = QUEUES.FORMED_TASKS,
 ) -> None:
-    log.info(f"Connecting to RabbitMQ...")
+    """Gets messages from the broker."""
+
+    log.info(
+        f"\n{__name__}: {queue_get_messages.__name__}: "
+        f"Checking for new messages..."
+    )
 
     broker_service = BrokerService()
     await broker_service.get_messages(
@@ -26,13 +50,17 @@ async def queue_get_messages(
     )
 
 
-async def sender_main():
+async def sender_main() -> None:
+    """The sender main function."""
+
     task = asyncio.create_task(queue_get_messages())
     await task
 
 
 @shared_task(bind=True)
 def sender_task(self, name: str) -> None:
+    """A celery worker sender task."""
+
     log.info(f"\n{'-'*30}\n{name} launched.\n")
 
     asyncio.run(sender_main())

@@ -1,0 +1,94 @@
+name: test-notifications-api
+
+services:
+  notifications-db:
+    image: postgres:16
+    container_name: notifications_db
+    env_file:
+      - ../../.env
+    volumes:
+      - notifications-database:/var/lib/postgresql/data
+    expose:
+      - 5432
+    networks:
+      - shared-network
+
+  notifications-cache:
+    image: redis
+    container_name: notifications_cache
+    env_file:
+      - ../../.env
+    expose:
+      - 6379
+    volumes:
+      - notifications-rds-data:/data
+      - notifications.redis.conf:/usr/local/etc/redis/redis.conf
+    restart: always
+    networks:
+      - shared-network
+
+  nginx:
+    image: nginx:alpine3.18
+    expose:
+      - 80
+    volumes:
+      - ../../data/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../data/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - shared-network
+
+  notifications-service:
+    build: ../../.
+    container_name: notifications_service
+    command: /entrypoint-fastapi.sh
+    expose:
+      - 8000
+    env_file:
+      - ../../.env
+    depends_on:
+      - notifications-db
+      - notifications-cache
+      - nginx
+    networks:
+      - shared-network
+
+  worker-celery:
+    build: ../../.
+    container_name: celery_worker
+    command: [ "celery", "-A", "main.celery_app", "worker", "--loglevel=INFO" ]
+    env_file:
+      - ../../.env
+    depends_on:
+      - notifications-service
+    networks:
+      - shared-network
+
+  beat-celery:
+    build: ../../.
+    container_name: celery_beat
+    command: [ "celery", "-A", "main.celery_app", "beat", "--loglevel=INFO" ]
+    env_file:
+      - ../../.env
+    depends_on:
+      - worker-celery
+    networks:
+      - shared-network
+
+  test_service:
+    build: .
+    container_name: tests
+    depends_on:
+      - beat-celery
+    env_file: .env
+    networks:
+      - shared-network
+
+volumes:
+  notifications-database:
+  notifications-rds-data:
+  notifications.redis.conf:
+
+
+networks:
+  shared-network:
+    external: true

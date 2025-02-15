@@ -7,7 +7,8 @@ from core.logger import log
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
-    NotificationUpdateDto,
+    NotificationTask,
+    NotificationUpdateProfileDto,
 )
 from schemas.responses import SimpleResultResponse
 from services.notifications import (
@@ -21,7 +22,7 @@ router = APIRouter()
 
 @router.post(
     "/",
-    response_model=SimpleResultResponse,
+    response_model=NotificationDBView,
     status_code=status.HTTP_200_OK,
     summary="Send a notification",
     description="Send a notification",
@@ -34,10 +35,12 @@ async def create_notification(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
-) -> SimpleResultResponse:
+) -> NotificationDBView:
 
-    await notifications_service.add_notification_task(notification_task)
-    return SimpleResultResponse(message="The task added.")
+    notification = await notifications_service.add_notification_task(
+        notification_task
+    )
+    return notification
 
 
 @router.get(
@@ -99,7 +102,7 @@ async def update_notification(
     request: Request,
     response: Response,
     notification_id: UUID,
-    notification_data: NotificationUpdateDto,
+    notification_data: NotificationUpdateProfileDto,
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
