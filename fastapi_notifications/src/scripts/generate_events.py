@@ -63,4 +63,4 @@ async def main(
 
 
 if __name__ == "__main__":
-    asyncio.run(main(cicles_quantity=1))
+    asyncio.run(main(cicles_quantity=1, _min=10, _max=10))

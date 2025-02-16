@@ -22,7 +22,7 @@ async def get_access_token():
     """Gets an access token."""
 
     async with httpx.AsyncClient() as client:
-        url = "http://localhost:8001/api/v1/auth/login"
+        url = f"{config.globals.url_auth_login}"
         json_data = {"login": "admin", "password": "admin"}
         response = await client.post(url=url, json=json_data)
 
@@ -48,7 +48,7 @@ async def get_profile_data(
     )
 
     user_id = notification_task.user_id
-    url = f"http://localhost:8001/api/v1/admin/users/{user_id}"
+    url = f"{config.globals.url_auth_users}/{user_id}"
     async with httpx.AsyncClient() as client:
         response = await client.get(url=url, cookies=access_data.model_dump())
         profile = response.content

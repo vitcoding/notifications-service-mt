@@ -18,6 +18,12 @@ class GlobalConfig(BaseSettings):
     base_dir: str = Field(
         default=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
+    url_auth_login: str = Field(
+        default="http://localhost:8001/api/v1/auth/login"
+    )
+    url_auth_users: str = Field(
+        default="http://localhost:8001/api/v1/admin/users"
+    )
     log_sql_queries: bool = True
     generate_events: bool = Field(default=False)
 
