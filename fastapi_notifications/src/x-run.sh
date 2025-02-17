@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-rm -f _temp/logs/logs.log
+rm -f _temp/outputs/output_other.log _temp/outputs/output_email.log
 
 terminator --title="FastAPI" -e 'echo FastAPI; \
             source .venv/bin/activate; \

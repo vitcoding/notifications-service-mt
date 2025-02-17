@@ -88,6 +88,34 @@ class BrokerConfig(BaseSettings):
         return connection_
 
 
+class SMTPConfig(BaseSettings):
+    """Configuration settings for SMTP."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="smtp_",
+        extra="ignore",
+    )
+
+    login: str = Field(default="YOUR_LOGIN")
+    password: str = Field(default="YOUR_PASSWORD")
+    domain: str = Field(default="yandex.ru")
+    host: str = Field(default="smtp.yandex.ru")
+    port: int = Field(default=465)
+
+    @property
+    def email(self):
+        email_ = f"{self.login}@{self.domain}"
+        return email_
+
+    @property
+    def is_active(self):
+        if self.login == "YOUR_LOGIN":
+            return False
+        return True
+
+
 # logging settings
 logging_config.dictConfig(LOGGING)
 
@@ -99,6 +127,7 @@ class Config(BaseSettings):
     db: DataBaseConfig = DataBaseConfig()
     cache: CacheConfig = CacheConfig()
     broker: BrokerConfig = BrokerConfig()
+    smtp: SMTPConfig = SMTPConfig()
 
 
 config = Config()

@@ -21,3 +21,6 @@ psycopg-binary==3.2.3
 
 httpx[http2]==0.28.1
 httpx-oauth==0.16.1
+
+aiosmtplib==4.0.0
+# aiofiles==24.1.0
