@@ -42,7 +42,7 @@ async def process_message(message: str) -> None:
 
     if notification_task.notification_type == "email":
         if config.smtp.is_active:
-            send_email(
+            await send_email(
                 notification_task.user_email,
                 notification_task.subject,
                 notification_task.message,
