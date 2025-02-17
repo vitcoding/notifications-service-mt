@@ -20,10 +20,10 @@ SMTP_PORT = config.smtp.port
 class EmailService:
     """A class for work with emails."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._server = None
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "EmailService":
         self._server = aiosmtplib.SMTP(
             hostname=SMTP_HOST, port=SMTP_PORT, use_tls=True
         )
@@ -32,7 +32,9 @@ class EmailService:
         log.info("\nEmail login done.")
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any):
+    async def __aexit__(
+        self, exc_type: Any, exc_val: Any, exc_tb: Any
+    ) -> None:
         if self._server:
             await self._server.quit()
 
@@ -69,21 +71,3 @@ class EmailService:
             log.error(f"An error while sending the letter: {reason}")
         else:
             log.info(f"\nThe letter has been sent! \nEmail: {email}")
-
-
-# async def main():
-#     emails = ["example1@example.com", "example2@example.com"]
-#     tasks = []
-
-#     async with EmailService() as emailer:
-#         for email in emails:
-#             task = asyncio.create_task(
-#                 emailer.send_email(email, "Тестовая тема", "Тестовый текст")
-#             )
-#             tasks.append(task)
-
-#         await asyncio.gather(*tasks)
-
-
-# if __name__ == "__main__":
-#     asyncio.run(main())

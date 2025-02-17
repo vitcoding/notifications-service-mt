@@ -27,7 +27,7 @@ def output_func(output_name: str, timestamp: datetime, message: dict) -> None:
         fwa.writelines(f"{timestamp}: {message}\n")
 
 
-async def process_message(message: str) -> None:
+async def process_message(message: str, emailer: EmailService | None) -> None:
     """Processes a message from the broker."""
 
     log.info(
@@ -42,13 +42,11 @@ async def process_message(message: str) -> None:
 
     if notification_task.notification_type == "email":
         if config.smtp.is_active:
-            email_service = EmailService()
-            async with email_service as server:
-                await email_service.send_email(
-                    notification_task.user_email,
-                    notification_task.subject,
-                    notification_task.message,
-                )
+            await emailer.send_email(
+                notification_task.user_email,
+                notification_task.subject,
+                notification_task.message,
+            )
         output_func("email", timestamp, notification_task.model_dump())
     else:
         output_func("other", timestamp, notification_task.model_dump())
@@ -73,9 +71,16 @@ async def queue_get_messages(
     )
 
     broker_service = BrokerService()
-    await broker_service.get_messages(
-        exchange_name, queue_name, process_message
-    )
+    if config.smtp.is_active:
+        email_service = EmailService()
+        async with email_service as emailer:
+            await broker_service.get_messages(
+                exchange_name, queue_name, process_message, emailer=emailer
+            )
+    else:
+        await broker_service.get_messages(
+            exchange_name, queue_name, process_message, emailer=None
+        )
 
 
 async def sender_main() -> None:

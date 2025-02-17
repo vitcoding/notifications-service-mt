@@ -113,6 +113,7 @@ class BrokerService(Broker):
         queue_name: str,
         async_process_func: Callable | None = None,
         batch_size: int = 1_000,
+        **kwargs,
     ) -> Any:
         """Gets messages from the queue."""
 
@@ -127,6 +128,7 @@ class BrokerService(Broker):
                     queue_name,
                     async_process_func,
                     batch_size,
+                    **kwargs,
                 )
 
         except (AMQPConnectionError, AMQPChannelError) as err:
@@ -143,6 +145,7 @@ class BrokerService(Broker):
         queue_name: str,
         async_process_func: Callable | None = None,
         batch_size: int = 1_000,
+        **kwargs,
     ) -> list[str]:
         """A method for consuming messages."""
 
@@ -170,7 +173,7 @@ class BrokerService(Broker):
 
                     # Process_message function
                     if async_process_func is not None:
-                        await async_process_func(message_body)
+                        await async_process_func(message_body, **kwargs)
 
                     # Confirmation of receipt of the message
                     await message.ack()
