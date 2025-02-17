@@ -11,7 +11,7 @@ from core.logger import log
 from schemas.notifications import NotificationTask, NotificationUpdateTimeDto
 from services.broker import BrokerService
 from services.notifications import NotificationsService
-from tasks.sender_tools.email.send import send_email
+from tasks.sender_tools.email.emailer import EmailService
 
 
 def output_func(output_name: str, timestamp: datetime, message: dict) -> None:
@@ -42,11 +42,13 @@ async def process_message(message: str) -> None:
 
     if notification_task.notification_type == "email":
         if config.smtp.is_active:
-            await send_email(
-                notification_task.user_email,
-                notification_task.subject,
-                notification_task.message,
-            )
+            email_service = EmailService()
+            async with email_service as server:
+                await email_service.send_email(
+                    notification_task.user_email,
+                    notification_task.subject,
+                    notification_task.message,
+                )
         output_func("email", timestamp, notification_task.model_dump())
     else:
         output_func("other", timestamp, notification_task.model_dump())
