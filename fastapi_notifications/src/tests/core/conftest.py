@@ -4,8 +4,6 @@ from typing import AsyncGenerator, Generator
 import aiohttp
 import pytest_asyncio
 
-from core.logger import log
-
 
 @pytest_asyncio.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:

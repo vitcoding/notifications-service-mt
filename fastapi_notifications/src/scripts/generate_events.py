@@ -6,6 +6,8 @@ import httpx
 
 
 def get_message_data(message: str, type_: str) -> dict[str, Any]:
+    """Creates a random message."""
+
     message_data = {
         "user_id": choice(
             [
@@ -53,6 +55,7 @@ async def main(
     cicles_quantity: int = -1, _min: int = 10, _max: int = 100
 ) -> None:
     """The main function for generating notifications."""
+    
     counter = 0
     while counter != cicles_quantity:
         notifications_tasks = generate_notifications(randint(_min, _max))

@@ -7,7 +7,6 @@ from pydantic import BaseModel
 from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import log
 from db.postgres import Base
 
 ModelType = TypeVar("ModelType", bound=Base)  # type: ignore

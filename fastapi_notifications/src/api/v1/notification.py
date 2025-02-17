@@ -2,12 +2,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
-from core.config import config
-from core.logger import log
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
-    NotificationTask,
     NotificationUpdateProfileDto,
 )
 from schemas.responses import SimpleResultResponse
