@@ -17,7 +17,7 @@ class Notification(Base):
         unique=True,
         nullable=False,
     )
-    user_id = Column(UUID, nullable=False)
+    user_id = Column(UUID, nullable=False, index=True)
     user_name = Column(String(255), nullable=False, default="")
     user_email = Column(String(255), nullable=False, default="")
     template_id = Column(UUID, nullable=False)
