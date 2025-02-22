@@ -5,7 +5,7 @@ services:
     image: postgres:16
     container_name: notifications_db
     env_file:
-      - ../../.env
+      - ../../.env.example
     volumes:
       - notifications-database:/var/lib/postgresql/data
     expose:
@@ -17,7 +17,7 @@ services:
     image: redis
     container_name: notifications_cache
     env_file:
-      - ../../.env
+      - ../../.env.example
     expose:
       - 6379
     volumes:
@@ -44,7 +44,7 @@ services:
     expose:
       - 8000
     env_file:
-      - ../../.env
+      - ../../.env.example
     depends_on:
       - notifications-db
       - notifications-cache
@@ -57,7 +57,7 @@ services:
     container_name: celery_worker
     command: [ "celery", "-A", "main.celery_app", "worker", "--loglevel=INFO" ]
     env_file:
-      - ../../.env
+      - ../../.env.example
     depends_on:
       - notifications-service
     networks:
@@ -68,7 +68,7 @@ services:
     container_name: celery_beat
     command: [ "celery", "-A", "main.celery_app", "beat", "--loglevel=INFO" ]
     env_file:
-      - ../../.env
+      - ../../.env.example
     depends_on:
       - worker-celery
     networks:
@@ -79,7 +79,7 @@ services:
     container_name: tests
     depends_on:
       - beat-celery
-    env_file: .env
+    env_file: .env.example
     networks:
       - shared-network
 

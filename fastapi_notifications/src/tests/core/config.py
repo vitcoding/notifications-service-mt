@@ -11,9 +11,20 @@ class TestConfig(BaseSettings):
     service_host: str = Field(default="127.0.0.1")
     service_port: int = Field(default=8006)
 
+    jwt_secret_key: str = Field(default="gPaFf9ldf-8lgUFePhe")
+    jwt_algorithm: str = Field(default="HS256")
+
 
 config = TestConfig()
 
 service_url = (
     f"{config.service_schema}{config.service_host}" f":{config.service_port}"
 )
+
+
+def get_auth_data():
+    """Returns data for token encode."""
+    return {
+        "secret_key": config.jwt_secret_key,
+        "algorithm": config.jwt_algorithm,
+    }

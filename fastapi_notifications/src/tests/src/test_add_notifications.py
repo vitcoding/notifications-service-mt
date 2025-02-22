@@ -6,6 +6,7 @@ import pytest
 from core.config import service_url
 from core.conftest import aiohttp_session
 from core.logger import log
+from tools.token import create_cookies
 
 
 @pytest.mark.parametrize(
@@ -74,8 +75,12 @@ async def test_add_notification(
 ) -> None:
     """Add notification test."""
 
+    cookies = create_cookies()
+
     url = service_url + "/api/v1/notifications/"
-    async with aiohttp_session.post(url, json=data_json) as response:
+    async with aiohttp_session.post(
+        url, json=data_json, cookies=cookies
+    ) as response:
         status = response.status
         log.debug(f"\nResponse: \n{response}.\n")
 

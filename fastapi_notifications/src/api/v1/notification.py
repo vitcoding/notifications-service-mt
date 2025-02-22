@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
+from auth.auth import get_current_user
 from schemas.notifications import (
     NotificationCreateDto,
     NotificationDBView,
@@ -32,6 +33,7 @@ async def create_notification(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
+    user_id: UUID = Depends(get_current_user),
 ) -> NotificationDBView:
 
     notification = await notifications_service.add_notification_task(
@@ -56,6 +58,7 @@ async def get_notifications(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
+    user_id: UUID = Depends(get_current_user),
 ) -> list[NotificationDBView]:
 
     notifications = await notifications_service.get_notifications(
@@ -79,6 +82,7 @@ async def get_notification(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
+    user_id: UUID = Depends(get_current_user),
 ) -> NotificationDBView:
 
     notification = await notifications_service.get_notification(
@@ -103,6 +107,7 @@ async def update_notification(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
+    user_id: UUID = Depends(get_current_user),
 ) -> NotificationDBView:
 
     notification = await notifications_service.update_notification(
@@ -126,6 +131,7 @@ async def delete_notification(
     notifications_service: NotificationsService = Depends(
         get_notifications_service
     ),
+    user_id: UUID = Depends(get_current_user),
 ) -> NotificationDBView:
 
     result = await notifications_service.delete_notification(notification_id)
@@ -144,6 +150,7 @@ async def get_user_notifications(
     request: Request,
     response: Response,
     user_id: UUID,
+    user_id_: UUID = Depends(get_current_user),
     sort: str | None = Query("-created_at"),
     pagination: PaginationParams = Depends(),
     notifications_service: NotificationsService = Depends(

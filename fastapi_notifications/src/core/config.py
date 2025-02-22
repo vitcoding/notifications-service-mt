@@ -28,6 +28,20 @@ class GlobalConfig(BaseSettings):
     generate_events: bool = Field(default=False)
 
 
+class AuthConfig(BaseSettings):
+    """Configuration settings for the authorization."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_prefix="auth_",
+        extra="ignore",
+    )
+
+    secret_key: str = Field(default="gPaFf9ldf-8lgUFePhe")
+    algorithm: str = Field(default="HS256")
+
+
 class DataBaseConfig(BaseSettings):
     """Configuration settings for the database."""
 
@@ -124,6 +138,7 @@ class Config(BaseSettings):
     """Base configuration settings class."""
 
     globals: GlobalConfig = GlobalConfig()
+    auth: AuthConfig = AuthConfig()
     db: DataBaseConfig = DataBaseConfig()
     cache: CacheConfig = CacheConfig()
     broker: BrokerConfig = BrokerConfig()
