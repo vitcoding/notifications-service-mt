@@ -32,7 +32,8 @@ DATA="\
 
 INSERT_QUERY="INSERT INTO ${TABLE} \
 (id, login, password, first_name, last_name, about, birth_date, \
-email, phone_number, role, created_at, updated_at) VALUES ${DATA};"
+email, phone_number, role, created_at, updated_at) VALUES ${DATA} \
+ON CONFLICT ${id} DO NOTHING;"
 
 export PGPASSWORD="${POSTGRES_PASSWORD}"
 
